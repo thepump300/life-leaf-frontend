@@ -112,6 +112,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
+              
         <div className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl top-10 left-10"></div>
         <div className="absolute w-80 h-80 bg-white/10 rounded-full blur-3xl bottom-10 right-10"></div>
       </div>
