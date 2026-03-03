@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { authAPI } from "@/services/api";
 
 function getStrength(p) {
   if (!p) return 0;
@@ -38,6 +40,8 @@ function BrandLogo() {
 }
 
 export default function AuthPage({ defaultMode = "login" }) {
+  const router = useRouter();
+
   const [toggled, setToggled]         = useState(defaultMode === "register");
   const [showPass, setShowPass]       = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -48,21 +52,49 @@ export default function AuthPage({ defaultMode = "login" }) {
 
   const strength = getStrength(regData.password);
 
+  // ── Login ─────────────────────────────────────────────────────────
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    toast.success("Login successful");
+    try {
+      const data = await authAPI.login({
+        email:    loginData.email,
+        password: loginData.password,
+      });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user",  JSON.stringify(data.user));
+      toast.success(`Welcome back, ${data.user.name}!`);
+      router.push("/");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ── Register ──────────────────────────────────────────────────────
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (regData.password !== regData.confirm) { toast.error("Passwords do not match"); return; }
+    if (regData.password !== regData.confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    toast.success("Account created!");
+    try {
+      const data = await authAPI.register({
+        name:     regData.name,
+        email:    regData.email,
+        password: regData.password,
+      });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user",  JSON.stringify(data.user));
+      toast.success("Account created! Welcome to Community.");
+      router.push("/");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,7 +131,15 @@ export default function AuthPage({ defaultMode = "login" }) {
               <a href="#" className="ac-forgot">Forgot password?</a>
             </div>
             <button type="submit" className="ac-btn" disabled={loading}>
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+                  </svg>
+                  Signing in…
+                </span>
+              ) : "Sign In"}
             </button>
             <div className="ac-divider"><span>or continue with</span></div>
             <button type="button" className="ac-google">
@@ -178,7 +218,15 @@ export default function AuthPage({ defaultMode = "login" }) {
             </div>
             <div style={{ marginTop: 14 }}>
               <button type="submit" className="ac-btn" disabled={loading}>
-                {loading ? "Creating account…" : "Create Account"}
+                {loading ? (
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+                    </svg>
+                    Creating account…
+                  </span>
+                ) : "Create Account"}
               </button>
             </div>
             <div className="ac-divider"><span>or continue with</span></div>
