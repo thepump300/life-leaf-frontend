@@ -29,38 +29,70 @@ api.interceptors.response.use(
 
 // ── Auth API ──────────────────────────────────────────────────────────
 export const authAPI = {
-  /**
-   * Register a new user.
-   * @param {{ name: string, email: string, password: string }} data
-   * @returns {{ token: string, user: { id, name, email } }}
-   */
   register: async (data) => {
     const res = await api.post("/api/auth/register", data);
     return res.data;
   },
-
-  /**
-   * Login an existing user.
-   * @param {{ email: string, password: string }} data
-   * @returns {{ token: string, user: { id, name, email } }}
-   */
   login: async (data) => {
     const res = await api.post("/api/auth/login", data);
     return res.data;
   },
-
-  /**
-   * Get the currently authenticated user (requires token in localStorage).
-   * @returns {{ user: { id, name, email } }}
-   */
   getMe: async () => {
     const res = await api.get("/api/auth/me");
     return res.data;
   },
-
-  /** Remove stored token (client-side logout) */
   logout: () => {
-    if (typeof window !== "undefined") localStorage.removeItem("token");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+  },
+};
+
+// ── Profile API ───────────────────────────────────────────────────────
+export const profileAPI = {
+  /** Get current user profile */
+  getProfile: async () => {
+    const res = await api.get("/api/profile");
+    return res.data;
+  },
+  /** Create profile + generate QR ID */
+  setup: async (data) => {
+    const res = await api.post("/api/profile/setup", data);
+    return res.data;
+  },
+  /** Update existing profile fields */
+  update: async (data) => {
+    const res = await api.put("/api/profile/update", data);
+    return res.data;
+  },
+};
+
+// ── QR API ────────────────────────────────────────────────────────────
+export const qrAPI = {
+  /** Public — fetch vehicle info by qrId (no auth required) */
+  getByQrId: async (qrId) => {
+    const res = await api.get(`/api/qr/${qrId}`);
+    return res.data;
+  },
+};
+
+// ── Incident API ──────────────────────────────────────────────────────
+export const incidentAPI = {
+  /** Public — report a parking or accident incident */
+  report: async ({ qrId, type, location }) => {
+    const res = await api.post("/api/incidents/report", {
+      qrId,
+      type,
+      location,
+      timestamp: new Date().toISOString(),
+    });
+    return res.data;
+  },
+  /** Protected — get logged-in user's incident history */
+  getMyIncidents: async () => {
+    const res = await api.get("/api/incidents/my");
+    return res.data;
   },
 };
 
