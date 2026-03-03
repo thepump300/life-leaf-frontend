@@ -45,18 +45,36 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* ── Community Brand Colors ── */
+  --color-brand-orange:       var(--brand-orange);
+  --color-brand-orange-light: var(--brand-orange-light);
+  --color-brand-orange-dark:  var(--brand-orange-dark);
+  --color-brand-cyan:         var(--brand-cyan);
+  --color-brand-cyan-dark:    var(--brand-cyan-dark);
+  --color-brand-black:        var(--brand-black);
 }
 
 :root {
   --radius: 0.625rem;
+
+  /* ── Community Brand Colors ── */
+  --brand-orange:       #F07028;   /* main orange  (mid-circle)      */
+  --brand-orange-light: #FFB347;   /* amber / top of circle gradient */
+  --brand-orange-dark:  #E8411A;   /* deep orange-red / bottom       */
+  --brand-cyan:         #5CE8D8;   /* cyan text                      */
+  --brand-cyan-dark:    #00BCD4;   /* darker cyan                    */
+  --brand-black:        #0A0A0A;   /* near-black background          */
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* primary → brand orange */
+  --primary: oklch(0.65 0.2 40);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -66,7 +84,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.65 0.2 40);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -74,12 +92,12 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.2 40);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.65 0.2 40);
 }
 
 .dark {
@@ -89,8 +107,9 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* primary → brand orange in dark mode too */
+  --primary: oklch(0.7 0.2 40);
+  --primary-foreground: oklch(0.1 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -100,7 +119,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.7 0.2 40);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -108,19 +127,521 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.7 0.2 40);
+  --sidebar-primary-foreground: oklch(0.1 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.7 0.2 40);
 }
+
+/* ── Keyframe animations ─────────────────────────────────────────── */
+
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(24px, -28px) scale(1.06); }
+  70%       { transform: translate(-16px, 12px) scale(0.95); }
+}
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  35%       { transform: translate(-20px, 22px) scale(1.04); }
+  65%       { transform: translate(18px, -14px) scale(0.97); }
+}
+@keyframes orb-drift-c {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(12px, -18px); }
+}
+@keyframes form-enter {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer-sweep {
+  0%   { left: -70%; }
+  100% { left: 130%; }
+}
+@keyframes spin-once {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes strength-grow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+/* ── Utility classes ─────────────────────────────────────────────── */
+
+.orb-a { animation: orb-drift-a 9s  ease-in-out infinite; }
+.orb-b { animation: orb-drift-b 12s ease-in-out 2s infinite; }
+.orb-c { animation: orb-drift-c 7s  ease-in-out 1s infinite; }
+
+.form-enter { animation: form-enter 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+.btn-shimmer:hover::after {
+  animation: shimmer-sweep 0.65s ease;
+}
+
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+
+
+
+
+  
   body {
     @apply bg-background text-foreground;
   }
+}
+/* ── Auth Card (sliding panel) ───────────────────────────────────── */
+
+.ac-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #06040e;
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spin-border {
+  to { --border-angle: 360deg; }
+}
+
+.ac-card-wrap {
+  --border-angle: 0deg;
+  padding: 1.5px;
+  border-radius: 21.5px;
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(255,255,255,0.08)  0%,
+    rgba(255,179,71,0.90)  20%,
+    rgba(240,112,40,1.00)  35%,
+    rgba(232,65,26,0.90)   50%,
+    rgba(255,255,255,0.55) 65%,
+    rgba(255,179,71,0.60)  80%,
+    rgba(255,255,255,0.08) 100%
+  );
+  animation: spin-border 4s linear infinite;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.72), 0 0 40px rgba(240,112,40,0.18);
+}
+
+.ac-card {
+  position: relative;
+  width: 920px;
+  max-width: 96vw;
+  height: 620px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0f0c18;
+}
+
+/* ── Diagonal orange panel — clip-path for GPU-smooth animation ───── */
+
+.ac-shape {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(148deg, #FFB347 0%, #F07028 45%, #E8411A 100%);
+  /* login: panel covers right side with angled left edge */
+  clip-path: polygon(56% 0%, 100% 0%, 100% 100%, 44% 100%);
+  z-index: 5;
+  transition: clip-path 0.85s cubic-bezier(0.77,0,0.18,1);
+  will-change: clip-path;
+}
+
+.ac-shape2 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(148deg, rgba(255,179,71,0.18) 0%, rgba(232,65,26,0.08) 100%);
+  clip-path: polygon(60% 0%, 100% 0%, 100% 100%, 48% 100%);
+  z-index: 4;
+  transition: clip-path 0.9s cubic-bezier(0.77,0,0.18,1) 0.05s;
+  will-change: clip-path;
+}
+
+/* register: panel covers left side */
+.ac-card.toggled .ac-shape  { clip-path: polygon(0% 0%, 56% 0%, 44% 100%, 0% 100%); }
+.ac-card.toggled .ac-shape2 { clip-path: polygon(0% 0%, 52% 0%, 40% 100%, 0% 100%); }
+
+/* ── Form panels ─────────────────────────────────────────────────── */
+
+.ac-panel {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 32px;
+}
+
+.ac-login    { left: 0;  padding-right: 56px; }  /* keep content away from right diagonal */
+.ac-register { right: 0; padding-left:  56px; }  /* keep content away from left diagonal */
+
+/* Login: visible by default, fades out fast on toggle */
+.ac-login {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.22s ease, transform 0.3s ease;
+  pointer-events: auto;
+}
+.ac-card.toggled .ac-login {
+  opacity: 0;
+  transform: translateX(-20px);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.28s ease;
+}
+
+/* Register: hidden by default, fades in slowly after shape slides */
+.ac-register {
+  opacity: 0;
+  transform: translateX(20px);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.28s ease;
+}
+.ac-card.toggled .ac-register {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  transition: opacity 0.38s ease 0.52s, transform 0.42s cubic-bezier(0.22,1,0.36,1) 0.5s;
+}
+
+/* Login fade-in when reverting (toggled removed) */
+.ac-card:not(.toggled) .ac-login {
+  transition: opacity 0.38s ease 0.52s, transform 0.42s cubic-bezier(0.22,1,0.36,1) 0.5s;
+}
+
+.ac-panel h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 18px;
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+/* ── Welcome panels (sit on top of the orange shape) ─────────────── */
+
+.ac-welcome {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50%;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Decorative concentric rings */
+.ac-welcome::before,
+.ac-welcome::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.ac-welcome::before { width: 300px; height: 300px; }
+.ac-welcome::after  { width: 460px; height: 460px; border-color: rgba(255,255,255,0.07); }
+
+.ac-wel-login    { right: 0; }
+.ac-wel-register { left: 0; }
+
+/* Login welcome: visible by default */
+.ac-wel-login {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.22s ease, transform 0.28s ease;
+}
+.ac-card.toggled .ac-wel-login {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* Register welcome: hidden by default */
+.ac-wel-register {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.22s ease, transform 0.28s ease;
+}
+.ac-card.toggled .ac-wel-register {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.38s ease 0.5s, transform 0.42s cubic-bezier(0.22,1,0.36,1) 0.48s;
+}
+
+.ac-card:not(.toggled) .ac-wel-login {
+  transition: opacity 0.38s ease 0.5s, transform 0.42s cubic-bezier(0.22,1,0.36,1) 0.48s;
+}
+
+/* ── Logo app-icon frame ─────────────────────────────────────────── */
+
+.ac-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 22px;
+}
+
+.ac-logo-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 3px;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.35);
+  flex-shrink: 0;
+}
+
+.ac-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.ac-welcome h2 {
+  font-size: 30px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.22);
+}
+
+.ac-welcome p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.65;
+  margin-bottom: 0;
+}
+
+/* ── Feature tags ────────────────────────────────────────────────── */
+
+.ac-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 22px;
+}
+
+.ac-tags span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.16);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* ── Underline input fields ───────────────────────────────────────── */
+
+.ac-field {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.ac-field input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 28px 8px 0;
+  outline: none;
+  transition: border-color 0.25s;
+  caret-color: #F07028;
+}
+
+.ac-field input:focus {
+  border-bottom-color: #F07028;
+}
+
+.ac-field input::placeholder {
+  color: transparent;
+}
+
+/* Floating label */
+.ac-field label {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.38);
+  pointer-events: none;
+  transition: transform 0.22s ease, color 0.22s ease;
+  transform-origin: left top;
+}
+
+.ac-field input:focus ~ label,
+.ac-field input:not(:placeholder-shown) ~ label {
+  transform: translateY(-18px) scale(0.82);
+}
+
+.ac-field input:not(:placeholder-shown) ~ label { color: rgba(255,255,255,0.48); }
+.ac-field input:focus ~ label                   { color: #F07028; }
+
+/* Icon and eye toggle */
+.ac-icon {
+  position: absolute;
+  right: 0;
+  bottom: 10px;
+  color: rgba(255,255,255,0.22);
+  pointer-events: none;
+}
+
+.ac-eye {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.28);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.ac-eye:hover { color: rgba(255,255,255,0.65); }
+
+/* ── Submit button ───────────────────────────────────────────────── */
+
+.ac-btn {
+  width: 100%;
+  padding: 11px 0;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #FFB347 0%, #F07028 50%, #E8411A 100%);
+  box-shadow: 0 6px 24px rgba(240,112,40,0.40);
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.ac-btn:hover:not(:disabled)  { opacity: 0.88; box-shadow: 0 8px 28px rgba(240,112,40,0.52); }
+.ac-btn:active:not(:disabled) { transform: scale(0.97); }
+.ac-btn:disabled               { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Switch / forgot links ───────────────────────────────────────── */
+
+.ac-switch {
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  margin-top: 18px;
+}
+
+.ac-switch a {
+  color: #FFB347;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: opacity 0.2s;
+}
+.ac-switch a:hover { opacity: 0.75; }
+
+.ac-forgot {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.ac-forgot:hover { color: #FFB347; }
+
+/* ac-el: no-op placeholder (kept for compatibility) */
+.ac-el { }
+
+/* ── Google button & divider ─────────────────────────────────────── */
+
+.ac-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.ac-divider::before,
+.ac-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+}
+
+.ac-divider span {
+  font-size: 11px;
+  color: rgba(255,255,255,0.28);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.ac-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-radius: 50px;
+  border: none;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.ac-google:hover {
+  background: #f5f5f5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+}
+
+.ac-google:active {
+  transform: scale(0.97);
 }
