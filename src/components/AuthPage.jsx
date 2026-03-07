@@ -120,7 +120,12 @@ export default function AuthPage({ defaultMode = "login" }) {
       toast.success(`Welcome back, ${data.user.name}!`);
       router.push("/");
     } catch (err) {
-      toast.error(err.message);
+      if (err.data?.requiresVerification && err.data?.email) {
+        toast.error("Please verify your email. A new OTP was sent.");
+        router.push(`/verify-email?email=${encodeURIComponent(err.data.email)}`);
+      } else {
+        toast.error(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -135,11 +140,9 @@ export default function AuthPage({ defaultMode = "login" }) {
     }
     setLoading(true);
     try {
-      const data = await authAPI.register({ name: regData.name, email: regData.email, password: regData.password });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user",  JSON.stringify(data.user));
-      toast.success("Account created! Welcome to Community.");
-      router.push("/");
+      await authAPI.register({ name: regData.name, email: regData.email, password: regData.password });
+      toast.success("OTP sent! Check your email to verify your account.");
+      router.push(`/verify-email?email=${encodeURIComponent(regData.email)}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -201,7 +204,7 @@ export default function AuthPage({ defaultMode = "login" }) {
                     <input type="checkbox" className="ac-checkbox" />
                     <span>Remember me</span>
                   </label>
-                  <a href="#" className="ac-forgot">Forgot password?</a>
+                  <a href="/forgot-password" className="ac-forgot">Forgot password?</a>
                 </div>
 
                 <button type="submit" className="ac-btn btn-shimmer" disabled={loading}>

@@ -8,9 +8,10 @@ import {
   Download, Edit2, Car, ShieldAlert, Clock, LogOut,
   CheckCircle2, AlertTriangle, Droplets, MapPin,
   ParkingCircle, Siren, User, ChevronRight,
+  RefreshCw, ScanLine, X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { profileAPI, authAPI, incidentAPI } from "@/services/api";
+import { profileAPI, authAPI, incidentAPI, qrAPI, dashboardAPI } from "@/services/api";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 const TYPE_LABEL = { parking: "Parking Issue", accident: "Accident / Emergency" };
@@ -26,6 +27,9 @@ export default function DashboardPage() {
 
   const [profile, setProfile]               = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [stats, setStats]                   = useState(null);
+  const [regenModal, setRegenModal]         = useState(false);
+  const [regenLoading, setRegenLoading]     = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -33,7 +37,26 @@ export default function DashboardPage() {
       .then((d) => setProfile(d.user))
       .catch(() => toast.error("Failed to load profile"))
       .finally(() => setProfileLoading(false));
+    dashboardAPI.getStats()
+      .then((d) => setStats(d.stats))
+      .catch(() => {});
   }, [loading]);
+
+  const handleRegenerate = async () => {
+    setRegenLoading(true);
+    try {
+      await qrAPI.regenerate();
+      toast.success("QR code regenerated. Your old sticker will no longer work.");
+      // Refresh profile to get new qrId
+      const d = await profileAPI.getProfile();
+      setProfile(d.user);
+      setRegenModal(false);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setRegenLoading(false);
+    }
+  };
 
   const handleLogout = () => { authAPI.logout(); router.replace("/login"); };
 
@@ -76,6 +99,27 @@ export default function DashboardPage() {
         </div>
       </nav>
 
+      {/* ── Regenerate QR Modal ── */}
+      {regenModal && (
+        <div style={S.modalOverlay} onClick={() => setRegenModal(false)}>
+          <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div style={S.modalHeader}>
+              <h3 style={S.modalTitle}>Regenerate QR Code?</h3>
+              <button style={S.modalClose} onClick={() => setRegenModal(false)}><X size={16} /></button>
+            </div>
+            <p style={S.modalBody}>
+              Your current QR sticker will stop working immediately. Anyone who scans it will see an error. You'll need to print and stick a new sticker.
+            </p>
+            <div style={S.modalActions}>
+              <button style={S.ghostBtn} onClick={() => setRegenModal(false)}>Cancel</button>
+              <button style={{ ...S.orangeBtn, flex: 1 }} onClick={handleRegenerate} disabled={regenLoading}>
+                {regenLoading ? "Regenerating…" : "Yes, Regenerate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main style={S.main}>
         {!profile?.profileCompleted ? (
           /* ── Incomplete profile ── */
@@ -106,9 +150,10 @@ export default function DashboardPage() {
 
             {/* ── Stats row ── */}
             <div style={S.statsRow}>
-              <StatCard icon={<Car size={18} color="#F07028" />}      label="Vehicle"     value={profile.vehicleNumber} />
-              <StatCard icon={<Droplets size={18} color="#5CE8D8" />}  label="Blood Group" value={profile.bloodGroup || "—"} accent="#5CE8D8" />
-              <StatCard icon={<ShieldAlert size={18} color="#a78bfa" />} label="Contacts"  value={`${profile.emergencyContacts?.length || 0} saved`} accent="#a78bfa" />
+              <StatCard icon={<Car size={18} color="#F07028" />}         label="Vehicle"     value={profile.vehicleNumber} />
+              <StatCard icon={<Droplets size={18} color="#5CE8D8" />}    label="Blood Group" value={profile.bloodGroup || "—"} accent="#5CE8D8" />
+              <StatCard icon={<ScanLine size={18} color="#a78bfa" />}    label="Total Scans" value={stats?.scanCount ?? "—"} accent="#a78bfa" />
+              <StatCard icon={<ShieldAlert size={18} color="#22c55e" />} label="Contacts"    value={`${profile.emergencyContacts?.length || 0} saved`} accent="#22c55e" />
             </div>
 
             {/* ── Main grid ── */}
@@ -145,6 +190,9 @@ export default function DashboardPage() {
                 <div style={S.qrActions}>
                   <button style={S.orangeBtn} onClick={downloadQR}>
                     <Download size={14} /> Download QR
+                  </button>
+                  <button style={S.ghostSmBtn} onClick={() => setRegenModal(true)} title="Regenerate QR code">
+                    <RefreshCw size={14} />
                   </button>
                 </div>
 
@@ -201,6 +249,7 @@ function StatCard({ icon, label, value, accent = "#F07028" }) {
 function IncidentList() {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading]     = useState(true);
+  const [resolving, setResolving] = useState(null);
 
   useEffect(() => {
     incidentAPI.getMyIncidents()
@@ -208,6 +257,21 @@ function IncidentList() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleResolve = async (id) => {
+    setResolving(id);
+    try {
+      await incidentAPI.resolve(id);
+      setIncidents((prev) =>
+        prev.map((inc) => inc._id === id ? { ...inc, status: "resolved" } : inc)
+      );
+      toast.success("Marked as resolved");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setResolving(null);
+    }
+  };
 
   if (loading) return (
     <div style={S.incidentEmpty}>
@@ -225,7 +289,7 @@ function IncidentList() {
 
   return (
     <div style={S.incidentList}>
-      {incidents.map((inc, i) => (
+      {incidents.map((inc) => (
         <div key={inc._id} style={S.incidentRow}>
           <div style={{ ...S.incidentDot, background: TYPE_COLOR[inc.type] }} />
           <div style={S.incidentBody}>
@@ -234,9 +298,21 @@ function IncidentList() {
                 {TYPE_ICON[inc.type]}
                 <span>{TYPE_LABEL[inc.type] || inc.type}</span>
               </div>
-              <span style={{ ...S.statusBadge, background: STATUS_BG[inc.status], color: STATUS_CLR[inc.status] }}>
-                {inc.status}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ ...S.statusBadge, background: STATUS_BG[inc.status], color: STATUS_CLR[inc.status] }}>
+                  {inc.status}
+                </span>
+                {inc.status === "open" && (
+                  <button
+                    style={S.resolveBtn}
+                    onClick={() => handleResolve(inc._id)}
+                    disabled={resolving === inc._id}
+                  >
+                    <CheckCircle2 size={11} />
+                    {resolving === inc._id ? "…" : "Resolve"}
+                  </button>
+                )}
+              </div>
             </div>
             <div style={S.incidentMeta}>
               <span style={S.incidentMetaItem}><MapPin size={11} /> {inc.location}</span>
@@ -285,7 +361,7 @@ const S = {
   editBtn: { display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, color: "rgba(255,255,255,0.6)", padding: "9px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer" },
 
   /* Stats */
-  statsRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 24 },
+  statsRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 },
   statCard: { display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 20px" },
   statIcon: { width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   statLabel: { fontSize: 11, color: "rgba(255,255,255,0.38)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
@@ -342,6 +418,20 @@ const S = {
   incompleteIcon: { width: 64, height: 64, borderRadius: "50%", background: "rgba(240,112,40,0.12)", display: "flex", alignItems: "center", justifyContent: "center" },
   incompleteTitle: { fontSize: 22, fontWeight: 800, color: "#fff" },
   incompleteSub: { fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 },
+
+  /* Resolve button */
+  resolveBtn: { display: "flex", alignItems: "center", gap: 4, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 6, color: "#22c55e", fontSize: 11, fontWeight: 600, padding: "3px 8px", cursor: "pointer" },
+
+  /* Modal */
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 },
+  modalCard: { background: "#111018", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 20, padding: "28px 24px", maxWidth: 380, width: "100%", display: "flex", flexDirection: "column", gap: 16 },
+  modalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  modalTitle: { fontSize: 16, fontWeight: 800, color: "#fff", margin: 0 },
+  modalClose: { background: "transparent", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", alignItems: "center", padding: 4 },
+  modalBody: { fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0 },
+  modalActions: { display: "flex", gap: 10 },
+  ghostBtn: { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: 14, padding: "11px 18px", cursor: "pointer" },
+  ghostSmBtn: { display: "flex", alignItems: "center", justifyContent: "center", width: 40, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "rgba(255,255,255,0.5)", cursor: "pointer", flexShrink: 0 },
 
   /* Shared */
   orangeBtn: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(135deg,#FFB347,#F07028,#E8411A)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, padding: "11px 20px", cursor: "pointer", boxShadow: "0 4px 20px rgba(240,112,40,0.3)" },

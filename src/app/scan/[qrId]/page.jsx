@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Car, MapPin, TriangleAlert, ParkingCircle, Siren,
   CheckCircle2, ArrowLeft, ChevronRight, Navigation,
+  Phone, WifiOff,
 } from "lucide-react";
 import { qrAPI, incidentAPI } from "@/services/api";
 
@@ -17,7 +18,21 @@ export default function ScanPage({ params }) {
   const [step, setStep]             = useState("choose");   // choose | location | success
   const [selected, setSelected]     = useState(null);
   const [location, setLocation]     = useState("");
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isOffline, setIsOffline]   = useState(false);
+
+  // Detect offline
+  useEffect(() => {
+    const update = () => setIsOffline(!navigator.onLine);
+    update();
+    window.addEventListener("online",  update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online",  update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
 
   useEffect(() => {
     qrAPI.getByQrId(qrId)
@@ -25,6 +40,27 @@ export default function ScanPage({ params }) {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [qrId]);
+
+  const captureGPS = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported on this device");
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        setGpsLoading(false);
+        toast.success("Location captured");
+      },
+      () => {
+        setGpsLoading(false);
+        toast.error("Couldn't get location. Type it manually.");
+      },
+      { timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -37,6 +73,23 @@ export default function ScanPage({ params }) {
       setSubmitting(false);
     }
   };
+
+  // ── Offline banner ──────────────────────────────────────────────────
+  if (isOffline) return (
+    <Screen>
+      <div style={S.card}>
+        <div style={{ ...S.errorIconWrap, background: "rgba(239,68,68,0.10)" }}>
+          <WifiOff size={36} color="#ef4444" />
+        </div>
+        <h2 style={S.errorTitle}>No Internet</h2>
+        <p style={S.errorSub}>You're offline. The report can't be submitted right now.</p>
+        <a href="tel:112" style={S.call112Btn}>
+          <Phone size={18} /> Call 112 Emergency
+        </a>
+        <p style={S.disclaimer}>Please call emergency services directly.</p>
+      </div>
+    </Screen>
+  );
 
   if (loading) return <Screen><Loader /></Screen>;
 
@@ -64,6 +117,13 @@ export default function ScanPage({ params }) {
           <SummaryRow label="Vehicle"  value={vehicle.vehicleNumber} />
           <SummaryRow label="Location" value={location || "Unknown"} />
         </div>
+
+        {selected.key === "accident" && (
+          <a href="tel:112" style={S.call112Btn}>
+            <Phone size={16} /> Call 112 Emergency Services
+          </a>
+        )}
+
         <p style={S.successNote}>No personal data was shared with you.</p>
       </div>
     </Screen>
@@ -72,6 +132,13 @@ export default function ScanPage({ params }) {
   if (step === "location") return (
     <Screen>
       <div style={S.card}>
+        {/* Always-visible Call 112 on accident */}
+        {selected.key === "accident" && (
+          <a href="tel:112" style={S.call112Btn}>
+            <Phone size={16} /> Call 112 Emergency Services
+          </a>
+        )}
+
         <button style={S.backBtn} onClick={() => setStep("choose")}>
           <ArrowLeft size={15} /> Back
         </button>
@@ -89,14 +156,26 @@ export default function ScanPage({ params }) {
             <span style={S.locationTitle}>Where is the vehicle?</span>
             <span style={S.locationOptional}>(optional)</span>
           </div>
-          <input
-            style={S.locationInput}
-            type="text"
-            placeholder="e.g. Near Gate 2, Phoenix Mall, Andheri West"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            autoFocus
-          />
+          <div style={S.locationRow}>
+            <input
+              style={{ ...S.locationInput, flex: 1 }}
+              type="text"
+              placeholder="e.g. Near Gate 2, Phoenix Mall"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              autoFocus
+            />
+            <button
+              style={S.gpsBtn}
+              onClick={captureGPS}
+              disabled={gpsLoading}
+              title="Use my location"
+            >
+              {gpsLoading
+                ? <span style={S.gpsBtnSpinner} />
+                : <Navigation size={15} color="#F07028" />}
+            </button>
+          </div>
         </div>
 
         <button
@@ -130,26 +209,38 @@ export default function ScanPage({ params }) {
 
         <p style={S.choosePrompt}>What do you want to report?</p>
 
-        {/* Parking */}
-        <button style={{ ...S.typeBtn, ...S.parkingBtn }} onClick={() => { setSelected({ key: "parking", label: "Parking Issue", color: "#F07028", icon: <ParkingCircle size={18} color="#F07028" /> }); setStep("location"); }}>
-          <div style={{ ...S.typeBtnIcon, background: "rgba(240,112,40,0.15)" }}>
-            <ParkingCircle size={24} color="#F07028" />
-          </div>
-          <div style={S.typeBtnText}>
-            <span style={S.typeBtnTitle}>Parking Issue</span>
-            <span style={S.typeBtnSub}>Vehicle blocking access or parked incorrectly</span>
-          </div>
-          <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
-        </button>
-
-        {/* Emergency */}
-        <button style={{ ...S.typeBtn, ...S.emergencyBtn }} onClick={() => { setSelected({ key: "accident", label: "Accident / Emergency", color: "#ef4444", icon: <Siren size={18} color="#ef4444" /> }); setStep("location"); }}>
+        {/* Emergency — shown first, more prominent */}
+        <button
+          style={{ ...S.typeBtn, ...S.emergencyBtnStyle }}
+          onClick={() => {
+            setSelected({ key: "accident", label: "Accident / Emergency", color: "#ef4444", icon: <Siren size={18} color="#ef4444" /> });
+            setStep("location");
+          }}
+        >
           <div style={{ ...S.typeBtnIcon, background: "rgba(239,68,68,0.15)" }}>
             <Siren size={24} color="#ef4444" />
           </div>
           <div style={S.typeBtnText}>
             <span style={S.typeBtnTitle}>Accident / Emergency</span>
             <span style={S.typeBtnSub}>Urgent — vehicle involved in accident or emergency</span>
+          </div>
+          <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
+        </button>
+
+        {/* Parking */}
+        <button
+          style={{ ...S.typeBtn }}
+          onClick={() => {
+            setSelected({ key: "parking", label: "Parking Issue", color: "#F07028", icon: <ParkingCircle size={18} color="#F07028" /> });
+            setStep("location");
+          }}
+        >
+          <div style={{ ...S.typeBtnIcon, background: "rgba(240,112,40,0.15)" }}>
+            <ParkingCircle size={24} color="#F07028" />
+          </div>
+          <div style={S.typeBtnText}>
+            <span style={S.typeBtnTitle}>Parking Issue</span>
+            <span style={S.typeBtnSub}>Vehicle blocking access or parked incorrectly</span>
           </div>
           <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
         </button>
@@ -205,7 +296,10 @@ const S = {
   page: { minHeight: "100vh", background: "#06040e", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px", fontFamily: "var(--font-geist-sans), sans-serif", position: "relative", overflow: "hidden" },
   glow: { position: "fixed", inset: 0, background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.12) 0%, transparent 60%)", pointerEvents: "none" },
 
-  card: { width: "100%", maxWidth: 440, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, padding: "28px 24px", color: "#fff", display: "flex", flexDirection: "column", gap: 18, position: "relative", zIndex: 1, backdropFilter: "blur(12px)" },
+  card: { width: "100%", maxWidth: 440, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, padding: "28px 24px", color: "#fff", display: "flex", flexDirection: "column", gap: 16, position: "relative", zIndex: 1, backdropFilter: "blur(12px)" },
+
+  // Call 112 — always above the fold on accident flows
+  call112Btn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#dc2626,#ef4444)", border: "none", borderRadius: 14, color: "#fff", fontWeight: 800, fontSize: 16, padding: "16px", cursor: "pointer", textDecoration: "none", boxShadow: "0 8px 28px rgba(239,68,68,0.4)" },
 
   /* Brand */
   brand: { display: "flex", alignItems: "center", justifyContent: "center", gap: 10 },
@@ -220,9 +314,8 @@ const S = {
 
   /* Choose */
   choosePrompt: { fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", textAlign: "center" },
-  typeBtn: { display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "16px", cursor: "pointer", textAlign: "left", color: "#fff", transition: "border-color 0.2s, background 0.2s", width: "100%" },
-  parkingBtn: {},
-  emergencyBtn: {},
+  typeBtn: { display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "16px", cursor: "pointer", textAlign: "left", color: "#fff", width: "100%" },
+  emergencyBtnStyle: { border: "1.5px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.06)" },
   typeBtnIcon: { width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   typeBtnText: { flex: 1, display: "flex", flexDirection: "column", gap: 4 },
   typeBtnTitle: { fontSize: 15, fontWeight: 700, color: "#fff" },
@@ -241,7 +334,11 @@ const S = {
   locationHeader: { display: "flex", alignItems: "center", gap: 7 },
   locationTitle: { fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)" },
   locationOptional: { fontSize: 11, color: "rgba(255,255,255,0.28)", marginLeft: 2 },
-  locationInput: { width: "100%", background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "#fff", fontSize: 14, padding: "13px 15px", outline: "none", boxSizing: "border-box" },
+  locationRow: { display: "flex", gap: 8 },
+  locationInput: { background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "#fff", fontSize: 14, padding: "13px 15px", outline: "none", boxSizing: "border-box" },
+  gpsBtn: { width: 46, flexShrink: 0, background: "rgba(240,112,40,0.10)", border: "1.5px solid rgba(240,112,40,0.25)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  gpsBtnSpinner: { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(240,112,40,0.3)", borderTop: "2px solid #F07028", borderRadius: "50%", animation: "spin 0.7s linear infinite" },
+
   reportBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, padding: "14px", cursor: "pointer", width: "100%" },
   btnLoader: { display: "flex", alignItems: "center", gap: 8 },
   btnSpinner: { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" },
