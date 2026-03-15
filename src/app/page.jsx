@@ -8,7 +8,7 @@ import {
   Download, Edit2, Car, ShieldAlert, Clock, LogOut,
   CheckCircle2, AlertTriangle, Droplets, MapPin,
   ParkingCircle, Siren, RefreshCw, ScanLine, X,
-  Zap, Bell, ChevronRight, User,
+  Zap, Bell, ChevronRight, User, Package,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { profileAPI, authAPI, incidentAPI, qrAPI, dashboardAPI } from "@/services/api";
@@ -43,11 +43,17 @@ export default function DashboardPage() {
   const [stats,          setStats]          = useState(null);
   const [regenModal,     setRegenModal]     = useState(false);
   const [regenLoading,   setRegenLoading]   = useState(false);
+  const [stickerOrdered, setStickerOrdered] = useState(false);
+
+  useEffect(() => {
+    // Clear old localStorage flag — source of truth is now backend
+    localStorage.removeItem("stickerOrdered");
+  }, []);
 
   useEffect(() => {
     if (loading) return;
     profileAPI.getProfile()
-      .then((d) => setProfile(d.user))
+      .then((d) => { setProfile(d.user); setStickerOrdered(d.user.stickerOrdered === true); })
       .catch(() => toast.error("Failed to load profile"))
       .finally(() => setProfileLoading(false));
     dashboardAPI.getStats()
@@ -59,10 +65,11 @@ export default function DashboardPage() {
     setRegenLoading(true);
     try {
       await qrAPI.regenerate();
-      toast.success("QR code regenerated. Your old sticker will no longer work.");
       const d = await profileAPI.getProfile();
       setProfile(d.user);
+      setStickerOrdered(d.user.stickerOrdered === true);
       setRegenModal(false);
+      toast.success("QR regenerated. Order a new sticker — your old one is now invalid.");
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -144,7 +151,7 @@ export default function DashboardPage() {
               </button>
             </div>
             <p className="text-[13px] text-white/45 leading-relaxed">
-              Your current QR sticker will <span className="text-red-400 font-semibold">stop working immediately</span>. Anyone scanning it will see an error. You&apos;ll need to print and replace the sticker.
+              Your current QR sticker will <span className="text-red-400 font-semibold">stop working immediately</span>. Anyone scanning it will see an error. You&apos;ll need to <span className="text-[#F07028] font-semibold">order a new sticker</span> to reactivate your QR.
             </p>
             <div className="flex gap-2.5">
               <button className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/50 font-semibold text-sm py-2.5 px-4 cursor-pointer hover:bg-white/[0.08] transition-colors"
@@ -191,8 +198,32 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* ── Get Sticker Banner — only shown before ordering ── */}
+            {!stickerOrdered && <div className="pt-8 pb-2">
+              <div className="rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer group transition-all hover:brightness-110"
+                style={{ background:"linear-gradient(135deg,rgba(240,112,40,0.12),rgba(240,112,40,0.04))", border:"1.5px solid rgba(240,112,40,0.2)" }}
+                onClick={() => router.push("/pricing")}>
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background:"rgba(240,112,40,0.15)", border:"1px solid rgba(240,112,40,0.25)" }}>
+                    <Package size={20} color="#F07028" />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-black text-white">Get your physical QR sticker</p>
+                    <p className="text-[12px] text-white/35 mt-0.5">Order a weatherproof sticker — delivered to your door from ₹99</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold text-[13px] shrink-0"
+                  style={{ background:"linear-gradient(135deg,#FFB347,#F07028,#E8411A)" }}>
+                  Order Now <ChevronRight size={14} />
+                </div>
+              </div>
+            </div>
+
+            }
+
             {/* ── Hero Strip ── */}
-            <div className="pt-8 pb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="pt-6 pb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-white/30 uppercase tracking-widest mb-1.5 font-medium">Dashboard</p>
                 <h1 className="text-3xl md:text-4xl font-black text-white leading-tight">
@@ -266,46 +297,68 @@ export default function DashboardPage() {
                     <span className="text-lg font-black tracking-[4px] text-[#F07028]">{profile.vehicleNumber}</span>
                   </div>
 
-                  {/* QR code */}
-                  <div className="flex justify-center" ref={qrRef}>
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-2xl blur-2xl opacity-20"
-                        style={{ background: "linear-gradient(135deg,#FFB347,#F07028)" }} />
-                      <div className="relative bg-white rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_8px_rgba(240,112,40,0.08)]">
-                        <QRCodeCanvas
-                          value={`${BASE_URL}/scan/${profile.qrId}`}
-                          size={190}
-                          bgColor="#ffffff"
-                          fgColor="#0A0A0A"
-                          level="H"
-                          includeMargin
-                        />
+                  {/* QR code — locked until sticker ordered */}
+                  {stickerOrdered ? (
+                    <>
+                      <div className="flex justify-center" ref={qrRef}>
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-2xl blur-2xl opacity-20"
+                            style={{ background:"linear-gradient(135deg,#FFB347,#F07028)" }} />
+                          <div className="relative bg-white rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_8px_rgba(240,112,40,0.08)]">
+                            <QRCodeCanvas
+                              value={`${BASE_URL}/scan/${profile.qrId}`}
+                              size={190}
+                              bgColor="#ffffff"
+                              fgColor="#0A0A0A"
+                              level="H"
+                              includeMargin
+                            />
+                          </div>
+                        </div>
                       </div>
+                      <p className="text-center text-[10px] text-white/20 font-mono truncate px-2">
+                        {BASE_URL}/scan/{profile.qrId}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl text-white font-bold text-sm py-2.5 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.25)] hover:opacity-90 transition-opacity"
+                          style={{ background:"linear-gradient(135deg,#FFB347,#F07028,#E8411A)" }}
+                          onClick={downloadQR}>
+                          <Download size={13} /> Download PNG
+                        </button>
+                        <button
+                          className="w-11 flex items-center justify-center bg-white/[0.05] border border-white/[0.09] hover:bg-white/[0.09] transition-colors rounded-xl text-white/40 cursor-pointer shrink-0"
+                          onClick={() => setRegenModal(true)} title="Regenerate QR">
+                          <RefreshCw size={13} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4">
+                      {/* Blurred locked QR */}
+                      <div className="relative">
+                        <div className="rounded-2xl p-3 bg-white opacity-20 blur-sm select-none pointer-events-none">
+                          <div style={{ width:190, height:190, background:"repeating-linear-gradient(45deg,#ccc 0,#ccc 2px,#fff 0,#fff 50%)", backgroundSize:"8px 8px" }} />
+                        </div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                            style={{ background:"rgba(240,112,40,0.15)", border:"1.5px solid rgba(240,112,40,0.3)" }}>
+                            <Package size={22} color="#F07028" />
+                          </div>
+                          <div className="text-center px-4">
+                            <p className="text-[13px] font-black text-white">QR Locked</p>
+                            <p className="text-[10px] text-white/40 mt-0.5">Order your sticker to unlock</p>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => router.push("/pricing")}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-[13px] cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ background:"linear-gradient(135deg,#FFB347,#F07028,#E8411A)", boxShadow:"0 6px 20px rgba(240,112,40,0.3)" }}>
+                        <Package size={14} /> Order Sticker — from ₹99
+                      </button>
                     </div>
-                  </div>
-
-                  {/* URL hint */}
-                  <p className="text-center text-[10px] text-white/20 font-mono truncate px-2">
-                    {BASE_URL}/scan/{profile.qrId}
-                  </p>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl text-white font-bold text-sm py-2.5 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.25)] hover:opacity-90 transition-opacity"
-                      style={{ background: "linear-gradient(135deg,#FFB347,#F07028,#E8411A)" }}
-                      onClick={downloadQR}
-                    >
-                      <Download size={13} /> Download PNG
-                    </button>
-                    <button
-                      className="w-11 flex items-center justify-center bg-white/[0.05] border border-white/[0.09] hover:bg-white/[0.09] transition-colors rounded-xl text-white/40 cursor-pointer shrink-0"
-                      onClick={() => setRegenModal(true)}
-                      title="Regenerate QR"
-                    >
-                      <RefreshCw size={13} />
-                    </button>
-                  </div>
+                  )}
                 </div>
 
                 {/* Emergency Contacts Card */}

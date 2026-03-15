@@ -4,15 +4,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  User, Car, Droplets, ArrowLeft,
+  User, Car, Droplets, ArrowLeft, Phone, Mail,
   Plus, Trash2, Check, Shield, Sparkles,
   ChevronRight, QrCode,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { profileAPI } from "@/services/api";
 
-const BLOOD_GROUPS  = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−"];
-const EMPTY_CONTACT = { name: "", phone: "" };
+const BLOOD_GROUPS   = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−"];
+const EMPTY_CONTACT  = { name: "", phone: "", email: "" };
+const VEHICLE_REGEX  = /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/;
+
+// Enforce vehicle number format by position:
+// [0-1] letters · [2-3] digits · [4-5] letters · [6-9] digits
+const formatVehicle = (raw) => {
+  const val = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let out = "";
+  for (let i = 0; i < val.length && i < 10; i++) {
+    const ch = val[i];
+    const needsLetter = i < 2 || (i >= 4 && i < 6);
+    const needsDigit  = (i >= 2 && i < 4) || i >= 6;
+    if (needsLetter && /[A-Z]/.test(ch)) out += ch;
+    else if (needsDigit && /[0-9]/.test(ch)) out += ch;
+  }
+  return out;
+};
 const STEPS = [
   { label: "Vehicle Info",        desc: "Register your vehicle to the QR sticker"      },
   { label: "Emergency Contacts",  desc: "Who gets notified when your QR is scanned"     },
@@ -32,6 +48,7 @@ export default function ProfileSetupPage() {
 
   const [form, setForm] = useState({
     name:              "",
+    phone:             "",
     vehicleNumber:     "",
     bloodGroup:        "",
     emergencyContacts: [{ ...EMPTY_CONTACT }],
@@ -45,6 +62,7 @@ export default function ProfileSetupPage() {
           setIsEdit(true);
           setForm({
             name:              user.name || "",
+            phone:             user.phone || "",
             vehicleNumber:     user.vehicleNumber || "",
             bloodGroup:        user.bloodGroup || "",
             emergencyContacts: user.emergencyContacts?.length > 0
@@ -71,7 +89,13 @@ export default function ProfileSetupPage() {
   };
 
   const handleNext = () => {
-    if (step === 0 && !form.vehicleNumber.trim()) { toast.error("Vehicle number is required"); return; }
+    if (step === 0) {
+      if (!form.vehicleNumber.trim()) { toast.error("Vehicle number is required"); return; }
+      if (!VEHICLE_REGEX.test(form.vehicleNumber.trim())) {
+        toast.error("Invalid format — use MH12AB1234 (2 letters · 2 digits · 2 letters · 4 digits)");
+        return;
+      }
+    }
     goTo(step + 1);
   };
 
@@ -83,13 +107,13 @@ export default function ProfileSetupPage() {
     try {
       const payload = {
         name:              form.name.trim(),
+        phone:             form.phone.trim() || undefined,
         vehicleNumber:     form.vehicleNumber.trim().toUpperCase(),
         bloodGroup:        form.bloodGroup || undefined,
         emergencyContacts: form.emergencyContacts.filter(c => c.name.trim() && c.phone.trim()),
       };
-      if (isEdit) { await profileAPI.update(payload); toast.success("Profile updated!"); }
-      else        { await profileAPI.setup(payload);  toast.success("QR code generated!"); }
-      router.push("/");
+      if (isEdit) { await profileAPI.update(payload); toast.success("Profile updated!"); router.push("/"); }
+      else        { await profileAPI.setup(payload);  router.push("/pricing"); }
     } catch (err) { toast.error(err.message); }
     finally       { setSaving(false); }
   };
@@ -269,19 +293,46 @@ export default function ProfileSetupPage() {
                 </div>
 
                 <div className="flex flex-col gap-5">
-                  <Field label="Full Name">
-                    <input className="inp" type="text" placeholder="e.g. Darshan Gada"
-                      value={form.name} onChange={e => set("name", e.target.value)} />
-                  </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Full Name">
+                      <input className="inp" type="text" placeholder="e.g. Darshan Gada"
+                        value={form.name} onChange={e => set("name", e.target.value)} />
+                    </Field>
+                    <Field label="Your Phone" hint="for emergency alerts">
+                      <div className="flex rounded-2xl overflow-hidden" style={{ border:"1.5px solid rgba(255,255,255,0.08)" }}>
+                        <div className="flex items-center gap-1.5 px-3 shrink-0 border-r border-white/[0.08]"
+                          style={{ background:"rgba(240,112,40,0.07)" }}>
+                          <Phone size={11} color="rgba(240,112,40,0.6)" />
+                          <span className="text-[13px] font-bold text-[#F07028]">+91</span>
+                        </div>
+                        <input
+                          className="flex-1 bg-transparent text-white text-[14px] outline-none px-3 py-3 placeholder:text-white/18"
+                          type="tel"
+                          placeholder="98765 43210"
+                          maxLength={10}
+                          value={form.phone}
+                          onChange={e => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        />
+                      </div>
+                    </Field>
+                  </div>
 
                   <Field label={<>Vehicle Number <Required /></>}>
                     <div className="relative">
                       <input className="inp" type="text" placeholder="MH12AB1234"
                         value={form.vehicleNumber}
-                        onChange={e => set("vehicleNumber", e.target.value.toUpperCase())}
-                        style={{ letterSpacing:"4px", fontWeight:800, fontSize:"20px", color:"#F07028", paddingRight:"48px" }} />
-                      <Car size={16} color="rgba(240,112,40,0.35)" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        onChange={e => set("vehicleNumber", formatVehicle(e.target.value))}
+                        style={{ letterSpacing:"4px", fontWeight:800, fontSize:"20px", color: VEHICLE_REGEX.test(form.vehicleNumber) ? "#22c55e" : "#F07028", paddingRight:"48px" }} />
+                      {VEHICLE_REGEX.test(form.vehicleNumber)
+                        ? <Check size={16} color="#22c55e" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        : <Car size={16} color="rgba(240,112,40,0.35)" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      }
                     </div>
+                    <p className="text-[11px] mt-1" style={{ color: VEHICLE_REGEX.test(form.vehicleNumber) ? "rgba(34,197,94,0.6)" : "rgba(255,255,255,0.18)" }}>
+                      {VEHICLE_REGEX.test(form.vehicleNumber)
+                        ? "✓ Valid format"
+                        : `MH · 12 · AB · 1234 — ${form.vehicleNumber.length}/10 chars`}
+                    </p>
                   </Field>
 
                   <Field label="Blood Group" hint="optional · shown to scanner in emergencies">
@@ -351,11 +402,31 @@ export default function ProfileSetupPage() {
                           </button>
                         )}
                       </div>
-                      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input className="inp" type="text" placeholder="Name (Mom, Dad…)"
-                          value={c.name} onChange={e => setContact(idx, "name", e.target.value)} />
-                        <input className="inp" type="tel" placeholder="+91 98765 43210"
-                          value={c.phone} onChange={e => setContact(idx, "phone", e.target.value)} />
+                      <div className="p-4 flex flex-col gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input className="inp" type="text" placeholder="Name (Mom, Dad…)"
+                            value={c.name} onChange={e => setContact(idx, "name", e.target.value)} />
+                          <div className="flex rounded-2xl overflow-hidden" style={{ border:"1.5px solid rgba(255,255,255,0.08)" }}>
+                            <div className="flex items-center px-3 shrink-0 border-r border-white/[0.08]"
+                              style={{ background:"rgba(240,112,40,0.07)" }}>
+                              <span className="text-[13px] font-bold text-[#F07028]">+91</span>
+                            </div>
+                            <input
+                              className="flex-1 bg-transparent text-white text-[14px] outline-none px-3 py-3 placeholder:text-white/18"
+                              type="tel"
+                              placeholder="98765 43210"
+                              maxLength={10}
+                              value={c.phone}
+                              onChange={e => setContact(idx, "phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                            />
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input className="inp" type="email" placeholder="Email for incident alerts (optional)"
+                            value={c.email || ""} onChange={e => setContact(idx, "email", e.target.value)}
+                            style={{ paddingLeft:"40px" }} />
+                          <Mail size={13} color="rgba(240,112,40,0.4)" className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -403,6 +474,12 @@ export default function ProfileSetupPage() {
                       <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mb-2">Vehicle</p>
                       <p className="text-[28px] font-black tracking-[5px] text-[#F07028] leading-none truncate">{form.vehicleNumber}</p>
                       {form.name && <p className="text-[13px] text-white/45 font-semibold mt-2">{form.name}</p>}
+                      {form.phone && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <Phone size={10} color="rgba(240,112,40,0.4)" />
+                          <p className="text-[11px] text-white/30">{form.phone}</p>
+                        </div>
+                      )}
                     </div>
                     {form.bloodGroup && (
                       <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl shrink-0"

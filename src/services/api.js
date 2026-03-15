@@ -89,6 +89,11 @@ export const profileAPI = {
     const res = await api.put("/api/profile/update", data);
     return res.data;
   },
+  /** Demo: mark sticker as ordered */
+  placeOrder: async () => {
+    const res = await api.post("/api/profile/order");
+    return res.data;
+  },
 };
 
 // ── QR API ────────────────────────────────────────────────────────────
