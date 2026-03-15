@@ -150,8 +150,11 @@ export default function ScanPage({ params }) {
           <TriangleAlert size={32} color="#ef4444" />
         </div>
         <div>
-          <h2 className="text-[22px] font-black text-white">QR Not Found</h2>
-          <p className="text-[13px] text-white/35 mt-2 leading-relaxed">This QR code is invalid or has been removed. If this is an emergency, call 112.</p>
+          <h2 className="text-[22px] font-black text-white">Sticker Replaced</h2>
+          <p className="text-[13px] text-white/35 mt-2 leading-relaxed">
+            The owner has replaced this sticker with a newer one. This QR is no longer active.
+          </p>
+          <p className="text-[12px] text-white/20 mt-3">If this is an emergency, call 112 directly.</p>
         </div>
         <EmergencyBtn />
       </div>

@@ -19,6 +19,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Auto-logout on 401 — token expired or invalid
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+      return Promise.reject(new Error("Session expired. Please log in again."));
+    }
     const message =
       error.response?.data?.message ||
       error.message ||

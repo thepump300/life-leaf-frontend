@@ -14,10 +14,26 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token  = localStorage.getItem("token");
     const stored = localStorage.getItem("user");
 
     if (!token || !stored) {
+      router.replace("/login");
+      return;
+    }
+
+    // Check token expiry by decoding the payload (no lib needed — JWT is base64)
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.replace("/login");
+        return;
+      }
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       router.replace("/login");
       return;
     }

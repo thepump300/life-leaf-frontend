@@ -13,22 +13,11 @@ import { profileAPI } from "@/services/api";
 
 const BLOOD_GROUPS   = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−"];
 const EMPTY_CONTACT  = { name: "", phone: "", email: "" };
-const VEHICLE_REGEX  = /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/;
+const VEHICLE_REGEX  = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{1,4}[A-Z]?$/;
 
-// Enforce vehicle number format by position:
-// [0-1] letters · [2-3] digits · [4-5] letters · [6-9] digits
-const formatVehicle = (raw) => {
-  const val = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  let out = "";
-  for (let i = 0; i < val.length && i < 10; i++) {
-    const ch = val[i];
-    const needsLetter = i < 2 || (i >= 4 && i < 6);
-    const needsDigit  = (i >= 2 && i < 4) || i >= 6;
-    if (needsLetter && /[A-Z]/.test(ch)) out += ch;
-    else if (needsDigit && /[0-9]/.test(ch)) out += ch;
-  }
-  return out;
-};
+// Strip invalid chars, uppercase, cap at 11 chars (covers all Indian plate formats)
+const formatVehicle = (raw) =>
+  raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
 const STEPS = [
   { label: "Vehicle Info",        desc: "Register your vehicle to the QR sticker"      },
   { label: "Emergency Contacts",  desc: "Who gets notified when your QR is scanned"     },
@@ -331,7 +320,7 @@ export default function ProfileSetupPage() {
                     <p className="text-[11px] mt-1" style={{ color: VEHICLE_REGEX.test(form.vehicleNumber) ? "rgba(34,197,94,0.6)" : "rgba(255,255,255,0.18)" }}>
                       {VEHICLE_REGEX.test(form.vehicleNumber)
                         ? "✓ Valid format"
-                        : `MH · 12 · AB · 1234 — ${form.vehicleNumber.length}/10 chars`}
+                        : `e.g. MH12AB1234 — ${form.vehicleNumber.length} chars`}
                     </p>
                   </Field>
 

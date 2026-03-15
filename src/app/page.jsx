@@ -58,7 +58,7 @@ export default function DashboardPage() {
       .finally(() => setProfileLoading(false));
     dashboardAPI.getStats()
       .then((d) => setStats(d.stats))
-      .catch(() => {});
+      .catch(() => toast.error("Failed to load stats"));
   }, [loading]);
 
   const handleRegenerate = async () => {
@@ -244,23 +244,26 @@ export default function DashboardPage() {
               <StatCard
                 icon={<ScanLine size={20} />}
                 label="Total Scans"
-                value={stats?.scanCount ?? "0"}
+                value={stats?.scanCount ?? "—"}
                 accent="#a78bfa"
                 sub="QR scanned"
+                loading={!stats}
               />
               <StatCard
                 icon={<Zap size={20} />}
                 label="Open Reports"
-                value={stats?.openReports ?? "0"}
+                value={stats?.openReports ?? "—"}
                 accent="#F07028"
                 sub="Needs attention"
+                loading={!stats}
               />
               <StatCard
                 icon={<CheckCircle2 size={20} />}
                 label="Resolved"
-                value={stats?.resolvedReports ?? "0"}
+                value={stats?.resolvedReports ?? "—"}
                 accent="#22c55e"
                 sub="Closed"
+                loading={!stats}
               />
               <StatCard
                 icon={<ShieldAlert size={20} />}
@@ -268,6 +271,7 @@ export default function DashboardPage() {
                 value={stats ? `${stats.safetyScore}%` : "—"}
                 accent="#5CE8D8"
                 sub="Profile strength"
+                loading={!stats}
               />
             </div>
 
@@ -407,7 +411,17 @@ export default function DashboardPage() {
 }
 
 /* ── StatCard ── */
-function StatCard({ icon, label, value, accent, sub }) {
+function StatCard({ icon, label, value, accent, sub, loading }) {
+  if (loading) return (
+    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl py-5 px-5 flex flex-col gap-3">
+      <div className="w-10 h-10 rounded-xl bg-white/[0.06] animate-pulse" />
+      <div className="flex flex-col gap-2">
+        <div className="h-6 w-12 rounded-lg bg-white/[0.06] animate-pulse" />
+        <div className="h-3 w-20 rounded bg-white/[0.04] animate-pulse" />
+        <div className="h-2.5 w-16 rounded bg-white/[0.03] animate-pulse" />
+      </div>
+    </div>
+  );
   return (
     <div className="relative overflow-hidden bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.12] transition-colors rounded-2xl py-5 px-5 flex flex-col gap-3 cursor-default group">
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"
