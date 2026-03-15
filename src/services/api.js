@@ -108,11 +108,12 @@ export const qrAPI = {
 // ── Incident API ──────────────────────────────────────────────────────
 export const incidentAPI = {
   /** Public — report a parking or accident incident */
-  report: async ({ qrId, type, location }) => {
+  report: async ({ qrId, type, location, note }) => {
     const res = await api.post("/api/incidents/report", {
       qrId,
       type,
       location,
+      note,
       timestamp: new Date().toISOString(),
     });
     return res.data;

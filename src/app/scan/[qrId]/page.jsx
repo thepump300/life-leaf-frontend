@@ -4,23 +4,68 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { toast } from "sonner";
 import {
-  Car, MapPin, TriangleAlert, ParkingCircle, Siren,
-  CheckCircle2, ArrowLeft, ChevronRight, Navigation,
-  Phone, WifiOff,
+  Car, MapPin, TriangleAlert, ArrowLeft, ChevronRight, Navigation,
+  Phone, WifiOff, Lightbulb, Wrench, MessageSquare,
+  Shield, Clock, CheckCircle2, Siren, ParkingCircle, Droplets,
+  AlertCircle,
 } from "lucide-react";
 import { qrAPI, incidentAPI } from "@/services/api";
 
+const INCIDENT_TYPES = [
+  {
+    key:    "accident",
+    label:  "Accident / Emergency",
+    sub:    "Vehicle involved in crash or emergency",
+    icon:   Siren,
+    color:  "#ef4444",
+    bg:     "rgba(239,68,68,0.08)",
+    border: "rgba(239,68,68,0.22)",
+    urgent: true,
+  },
+  {
+    key:    "parking",
+    label:  "Parking Issue",
+    sub:    "Blocking access or parked incorrectly",
+    icon:   ParkingCircle,
+    color:  "#F07028",
+    bg:     "rgba(240,112,40,0.07)",
+    border: "rgba(240,112,40,0.18)",
+    urgent: false,
+  },
+  {
+    key:    "lights_on",
+    label:  "Lights Left On",
+    sub:    "Headlights or interior lights still on",
+    icon:   Lightbulb,
+    color:  "#FFB347",
+    bg:     "rgba(255,179,71,0.07)",
+    border: "rgba(255,179,71,0.18)",
+    urgent: false,
+  },
+  {
+    key:    "damage",
+    label:  "Damage Noticed",
+    sub:    "Scratch, dent, or hit-and-run observed",
+    icon:   Wrench,
+    color:  "#a78bfa",
+    bg:     "rgba(167,139,250,0.07)",
+    border: "rgba(167,139,250,0.18)",
+    urgent: false,
+  },
+];
+
 export default function ScanPage({ params }) {
-  const { qrId }    = use(params);
-  const [vehicle,    setVehicle]   = useState(null);
-  const [error,      setError]     = useState("");
-  const [loading,    setLoading]   = useState(true);
-  const [step,       setStep]      = useState("choose"); // choose | location | success
-  const [selected,   setSelected]  = useState(null);
-  const [location,   setLocation]  = useState("");
-  const [gpsLoading, setGpsLoading]= useState(false);
-  const [submitting, setSubmitting]= useState(false);
-  const [isOffline,  setIsOffline] = useState(false);
+  const { qrId }     = use(params);
+  const [vehicle,    setVehicle]    = useState(null);
+  const [error,      setError]      = useState("");
+  const [loading,    setLoading]    = useState(true);
+  const [step,       setStep]       = useState("choose");
+  const [selected,   setSelected]   = useState(null);
+  const [location,   setLocation]   = useState("");
+  const [note,       setNote]       = useState("");
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [isOffline,  setIsOffline]  = useState(false);
 
   useEffect(() => {
     const update = () => setIsOffline(!navigator.onLine);
@@ -41,16 +86,15 @@ export default function ScanPage({ params }) {
   }, [qrId]);
 
   const captureGPS = () => {
-    if (!navigator.geolocation) { toast.error("Geolocation not supported on this device"); return; }
+    if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+      ({ coords }) => {
+        setLocation(`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`);
         setGpsLoading(false);
         toast.success("Location captured");
       },
-      () => { setGpsLoading(false); toast.error("Couldn't get location. Type it manually."); },
+      () => { setGpsLoading(false); toast.error("Couldn't detect location. Enter manually."); },
       { timeout: 10000, maximumAge: 0 }
     );
   };
@@ -58,7 +102,7 @@ export default function ScanPage({ params }) {
   const submit = async () => {
     setSubmitting(true);
     try {
-      await incidentAPI.report({ qrId, type: selected.key, location: location.trim() || "Unknown" });
+      await incidentAPI.report({ qrId, type: selected.key, location: location.trim() || "Unknown", note: note.trim() });
       setStep("success");
     } catch (e) {
       toast.error(e.message.includes("Too many") ? "Too many reports. Try again later." : e.message);
@@ -67,247 +111,378 @@ export default function ScanPage({ params }) {
     }
   };
 
-  // ── Offline ──
+  // ── Offline ──────────────────────────────────────────────────────────
   if (isOffline) return (
-    <Screen>
-      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
-        <div className="w-[72px] h-[72px] rounded-full bg-[rgba(239,68,68,0.10)] flex items-center justify-center mx-auto">
-          <WifiOff size={36} color="#ef4444" />
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="flex flex-col items-center gap-6 text-center">
+        <div className="w-20 h-20 rounded-full flex items-center justify-center"
+          style={{ background:"rgba(239,68,68,0.1)", border:"1.5px solid rgba(239,68,68,0.2)" }}>
+          <WifiOff size={32} color="#ef4444" />
         </div>
-        <h2 className="text-[22px] font-extrabold text-center">No Internet</h2>
-        <p className="text-sm text-white/40 text-center leading-[1.6]">You&apos;re offline. The report can&apos;t be submitted right now.</p>
-        <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
-          <Phone size={18} /> Call 112 Emergency
-        </a>
-        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">Please call emergency services directly.</p>
+        <div>
+          <h2 className="text-[22px] font-black text-white">You're offline</h2>
+          <p className="text-[13px] text-white/35 mt-2 leading-relaxed">Reports can't be submitted without internet.<br />If this is an emergency, call 112 directly.</p>
+        </div>
+        <EmergencyBtn />
       </div>
-    </Screen>
+    </Shell>
   );
 
-  if (loading) return <Screen><Loader /></Screen>;
+  // ── Loading ───────────────────────────────────────────────────────────
+  if (loading) return (
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-full border-[2.5px] border-[rgba(240,112,40,0.12)] border-t-[#F07028] animate-spin" />
+        <p className="text-[13px] text-white/30">Looking up vehicle…</p>
+      </div>
+    </Shell>
+  );
 
+  // ── Error ─────────────────────────────────────────────────────────────
   if (error || !vehicle) return (
-    <Screen>
-      <div className="flex flex-col items-center gap-3.5 text-center bg-white/[0.03] border border-[rgba(239,68,68,0.15)] rounded-3xl py-12 px-8 max-w-[360px] text-white relative z-[1]">
-        <div className="w-[72px] h-[72px] rounded-full bg-[rgba(239,68,68,0.10)] flex items-center justify-center">
-          <TriangleAlert size={36} color="#ef4444" />
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="flex flex-col items-center gap-6 text-center">
+        <div className="w-20 h-20 rounded-full flex items-center justify-center"
+          style={{ background:"rgba(239,68,68,0.08)", border:"1.5px solid rgba(239,68,68,0.18)" }}>
+          <TriangleAlert size={32} color="#ef4444" />
         </div>
-        <h2 className="text-[22px] font-extrabold">QR Not Found</h2>
-        <p className="text-sm text-white/40 leading-relaxed">This QR code is invalid or has been removed.</p>
+        <div>
+          <h2 className="text-[22px] font-black text-white">QR Not Found</h2>
+          <p className="text-[13px] text-white/35 mt-2 leading-relaxed">This QR code is invalid or has been removed. If this is an emergency, call 112.</p>
+        </div>
+        <EmergencyBtn />
       </div>
-    </Screen>
+    </Shell>
   );
 
+  // ── Success ───────────────────────────────────────────────────────────
   if (step === "success") return (
-    <Screen>
-      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
-        <div className="flex justify-center">
-          <div className="w-20 h-20 rounded-full bg-[rgba(34,197,94,0.12)] border-2 border-[rgba(34,197,94,0.25)] flex items-center justify-center">
-            <CheckCircle2 size={40} color="#22c55e" />
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="w-full max-w-[420px] mx-auto flex flex-col gap-6 pop-in">
+
+        {/* Check */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center"
+            style={{ background:"rgba(34,197,94,0.1)", border:"2px solid rgba(34,197,94,0.25)" }}>
+            <CheckCircle2 size={38} color="#22c55e" />
+          </div>
+          <div>
+            <h2 className="text-[28px] font-black text-white">Report sent!</h2>
+            <p className="text-[13px] text-white/35 mt-1.5 leading-relaxed">
+              The owner has been notified instantly via email.
+            </p>
           </div>
         </div>
-        <h2 className="text-[24px] font-black text-[#22c55e] text-center">Report Sent!</h2>
-        <p className="text-[13px] text-white/45 text-center leading-[1.7]">
-          The vehicle owner has been notified. Thank you for keeping the community safe.
-        </p>
 
-        <div className="bg-white/[0.04] rounded-[14px] p-4 flex flex-col gap-3">
-          <SummaryRow label="Incident" value={selected.label} color={selected.color} />
-          <SummaryRow label="Vehicle"  value={vehicle.vehicleNumber} />
-          <SummaryRow label="Location" value={location || "Unknown"} />
+        {/* Summary card */}
+        <div className="rounded-2xl overflow-hidden border border-white/[0.08]"
+          style={{ background:"rgba(255,255,255,0.03)" }}>
+          <div className="px-5 py-3 border-b border-white/[0.06]">
+            <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Report Summary</p>
+          </div>
+          <div className="flex flex-col divide-y divide-white/[0.05]">
+            <SummaryRow label="Incident" value={selected.label} color={selected.color} />
+            <SummaryRow label="Vehicle"  value={vehicle.vehicleNumber} />
+            <SummaryRow label="Location" value={location || "Not provided"} />
+            {note && <SummaryRow label="Note" value={note} />}
+          </div>
         </div>
 
-        {selected.key === "accident" && (
-          <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
-            <Phone size={16} /> Call 112 Emergency Services
-          </a>
-        )}
+        {/* What happens next */}
+        <div className="rounded-2xl border border-white/[0.07] p-5 flex flex-col gap-4"
+          style={{ background:"rgba(255,255,255,0.02)" }}>
+          <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">What happens next</p>
+          <div className="flex flex-col gap-3.5">
+            {[
+              { icon: Clock,        text: "Owner receives an email alert immediately",      done: true  },
+              { icon: Shield,       text: "Emergency contacts notified if provided",         done: true  },
+              { icon: CheckCircle2, text: "Owner reviews and marks the report as resolved",  done: false },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: item.done ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.05)" }}>
+                  <item.icon size={13} color={item.done ? "#22c55e" : "rgba(255,255,255,0.2)"} />
+                </div>
+                <p className="text-[12px] text-white/40 leading-relaxed mt-0.5">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <p className="text-[11px] text-white/[0.22] text-center">No personal data was shared with you.</p>
+        {selected.urgent && <EmergencyBtn />}
+
+        <p className="text-[11px] text-white/18 text-center">Your identity was not recorded.</p>
       </div>
-    </Screen>
+    </Shell>
   );
 
-  if (step === "location") return (
-    <Screen>
-      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
-        {selected.key === "accident" && (
-          <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
-            <Phone size={16} /> Call 112 Emergency Services
-          </a>
-        )}
+  // ── Details step ──────────────────────────────────────────────────────
+  if (step === "details") return (
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="w-full max-w-[420px] mx-auto flex flex-col gap-5 slide-up">
 
-        <button
-          className="flex items-center gap-1.5 bg-transparent border-none text-white/40 text-[13px] cursor-pointer p-0"
-          onClick={() => setStep("choose")}
-        >
-          <ArrowLeft size={15} /> Back
+        {/* Back */}
+        <button className="flex items-center gap-1.5 text-white/30 hover:text-white/60 text-[13px] cursor-pointer transition-colors self-start"
+          onClick={() => setStep("choose")}>
+          <ArrowLeft size={14} /> Back
         </button>
 
-        <div
-          className="flex items-center gap-2 rounded-[10px] py-2.5 px-3.5"
-          style={{ background: selected.color + "18", border: `1px solid ${selected.color}30` }}
-        >
-          {selected.icon}
-          <span className="text-sm font-bold" style={{ color: selected.color }}>{selected.label}</span>
+        {/* Emergency banner */}
+        {selected.urgent && (
+          <div className="rounded-2xl overflow-hidden border border-red-500/20"
+            style={{ background:"rgba(239,68,68,0.07)" }}>
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <AlertCircle size={16} color="#ef4444" className="shrink-0" />
+              <p className="text-[12px] text-red-400/80 leading-relaxed flex-1">
+                If anyone is injured, <strong className="text-red-400">call 112 immediately</strong> before submitting.
+              </p>
+            </div>
+            <EmergencyBtn compact />
+          </div>
+        )}
+
+        {/* Selected type badge */}
+        <div className="flex items-center gap-3.5 rounded-2xl px-4 py-4"
+          style={{ background: selected.bg, border:`1.5px solid ${selected.border}` }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background:`${selected.color}20`, color: selected.color }}>
+            <selected.icon size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-bold" style={{ color: selected.color }}>{selected.label}</p>
+            <p className="text-[11px] text-white/30 mt-0.5">{selected.sub}</p>
+          </div>
         </div>
 
-        <VehiclePlate number={vehicle.vehicleNumber} />
+        {/* Vehicle */}
+        <PlateDisplay vehicle={vehicle} />
 
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center gap-1.5">
-            <Navigation size={15} color="#F07028" />
-            <span className="text-[13px] font-semibold text-white/65">Where is the vehicle?</span>
-            <span className="text-[11px] text-white/[0.28] ml-0.5">(optional)</span>
-          </div>
+        {/* Location */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[11px] font-bold text-white/25 uppercase tracking-widest">
+            Location <span className="font-normal normal-case tracking-normal text-white/15">· optional</span>
+          </label>
           <div className="flex gap-2">
             <input
-              className="flex-1 bg-white/[0.06] border-[1.5px] border-white/10 rounded-xl text-white text-sm py-[13px] px-[15px] outline-none box-border placeholder:text-white/30"
+              className="inp flex-1"
               type="text"
               placeholder="e.g. Near Gate 2, Phoenix Mall"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={e => setLocation(e.target.value)}
               autoFocus
             />
             <button
-              className="w-[46px] shrink-0 bg-[rgba(240,112,40,0.10)] border-[1.5px] border-[rgba(240,112,40,0.25)] rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-50"
+              className="w-12 shrink-0 rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-40 transition-colors"
+              style={{ background:"rgba(240,112,40,0.1)", border:"1.5px solid rgba(240,112,40,0.22)" }}
               onClick={captureGPS}
               disabled={gpsLoading}
-              title="Use my location"
-            >
+              title="Detect my location">
               {gpsLoading
-                ? <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-[rgba(240,112,40,0.3)] border-t-[#F07028] animate-spin" />
+                ? <span className="w-3.5 h-3.5 rounded-full border-2 border-[rgba(240,112,40,0.3)] border-t-[#F07028] animate-spin" />
                 : <Navigation size={15} color="#F07028" />}
             </button>
           </div>
         </div>
 
-        <button
-          className="flex items-center justify-center gap-2 border-none rounded-[14px] text-white font-bold text-[15px] py-3.5 cursor-pointer w-full disabled:opacity-50"
-          style={{
-            background: selected.key === "accident"
-              ? "linear-gradient(135deg,#dc2626,#ef4444)"
-              : "linear-gradient(135deg,#FFB347,#F07028,#E8411A)",
-            boxShadow: `0 8px 28px ${selected.color}40`,
-          }}
-          onClick={submit}
-          disabled={submitting}
-        >
-          {submitting
-            ? <><span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Submitting…</>
-            : <><span>Submit Report</span><ChevronRight size={16} /></>}
-        </button>
-
-        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">
-          Your identity is not recorded. Only the location you provide will be shared with the vehicle owner.
-        </p>
-      </div>
-    </Screen>
-  );
-
-  // ── Choose step ──
-  return (
-    <Screen>
-      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
-        {/* Brand */}
-        <div className="flex items-center justify-center gap-2.5">
-          <span
-            className="text-[20px] font-black"
-            style={{ background: "linear-gradient(90deg,#FFB347,#F07028)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-          >
-            Community
-          </span>
-          <span className="text-[10px] font-bold text-white/30 bg-white/[0.06] border border-white/10 rounded-[20px] py-[3px] px-[9px] uppercase tracking-wide">
-            QR Report
-          </span>
+        {/* Note */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[11px] font-bold text-white/25 uppercase tracking-widest">
+            Note <span className="font-normal normal-case tracking-normal text-white/15">· optional</span>
+          </label>
+          <textarea
+            className="inp resize-none leading-relaxed"
+            rows={3}
+            placeholder="Any additional details you noticed…"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            maxLength={300}
+          />
+          {note && <p className="text-[10px] text-white/18 self-end">{note.length}/300</p>}
         </div>
 
-        <VehiclePlate number={vehicle.vehicleNumber} />
-
-        <p className="text-sm font-semibold text-white/60 text-center">What do you want to report?</p>
-
-        {/* Emergency */}
+        {/* Submit */}
         <button
-          className="flex items-center gap-3.5 bg-[rgba(239,68,68,0.06)] border-[1.5px] border-[rgba(239,68,68,0.25)] rounded-2xl p-4 cursor-pointer text-left text-white w-full"
-          onClick={() => {
-            setSelected({ key: "accident", label: "Accident / Emergency", color: "#ef4444", icon: <Siren size={18} color="#ef4444" /> });
-            setStep("location");
+          className="flex items-center justify-center gap-2 rounded-2xl text-white font-bold text-[15px] py-4 w-full cursor-pointer disabled:opacity-40 transition-opacity hover:opacity-90 active:scale-[0.98]"
+          style={{
+            background: selected.urgent
+              ? "linear-gradient(135deg,#dc2626,#ef4444)"
+              : "linear-gradient(135deg,#FFB347,#F07028,#E8411A)",
+            boxShadow: `0 8px 28px ${selected.color}30`,
           }}
-        >
-          <div className="w-12 h-12 rounded-[14px] bg-[rgba(239,68,68,0.15)] flex items-center justify-center shrink-0">
-            <Siren size={24} color="#ef4444" />
-          </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <span className="text-[15px] font-bold text-white">Accident / Emergency</span>
-            <span className="text-xs text-white/40 leading-[1.4]">Urgent — vehicle involved in accident or emergency</span>
-          </div>
-          <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
+          onClick={submit}
+          disabled={submitting}>
+          {submitting
+            ? <><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Submitting…</>
+            : <>Submit Report <ChevronRight size={16} /></>}
         </button>
 
-        {/* Parking */}
-        <button
-          className="flex items-center gap-3.5 bg-white/[0.04] border-[1.5px] border-white/[0.08] rounded-2xl p-4 cursor-pointer text-left text-white w-full"
-          onClick={() => {
-            setSelected({ key: "parking", label: "Parking Issue", color: "#F07028", icon: <ParkingCircle size={18} color="#F07028" /> });
-            setStep("location");
-          }}
-        >
-          <div className="w-12 h-12 rounded-[14px] bg-[rgba(240,112,40,0.15)] flex items-center justify-center shrink-0">
-            <ParkingCircle size={24} color="#F07028" />
-          </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <span className="text-[15px] font-bold text-white">Parking Issue</span>
-            <span className="text-xs text-white/40 leading-[1.4]">Vehicle blocking access or parked incorrectly</span>
-          </div>
-          <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
-        </button>
-
-        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">
-          🔒 Your identity is not recorded. No personal information is shared with you.
-        </p>
+        <p className="text-[11px] text-white/18 text-center">Your identity is not recorded or shared.</p>
       </div>
-    </Screen>
+    </Shell>
+  );
+
+  // ── Choose step ───────────────────────────────────────────────────────
+  return (
+    <Shell>
+      <style>{STYLES}</style>
+      <div className="w-full max-w-[420px] mx-auto flex flex-col gap-6 slide-up">
+
+        {/* Header */}
+        <div className="flex flex-col items-center gap-1.5 text-center">
+          <span className="text-[15px] font-black"
+            style={{ background:"linear-gradient(90deg,#FFB347,#F07028)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+            Community
+          </span>
+          <p className="text-[12px] text-white/25">QR Vehicle Report</p>
+        </div>
+
+        {/* Vehicle plate */}
+        <PlateDisplay vehicle={vehicle} prominent />
+
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ background:"rgba(255,255,255,0.06)" }} />
+          <p className="text-[11px] text-white/25 font-medium">What happened?</p>
+          <div className="flex-1 h-px" style={{ background:"rgba(255,255,255,0.06)" }} />
+        </div>
+
+        {/* Incident types */}
+        <div className="flex flex-col gap-2.5">
+          {INCIDENT_TYPES.map((type) => (
+            <button key={type.key}
+              className="flex items-center gap-4 rounded-2xl p-4 cursor-pointer text-left w-full transition-all hover:brightness-110 active:scale-[0.985]"
+              style={{ background: type.bg, border:`1.5px solid ${type.border}` }}
+              onClick={() => { setSelected(type); setStep("details"); }}>
+              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0"
+                style={{ background:`${type.color}18`, color: type.color }}>
+                <type.icon size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[14px] font-bold text-white">{type.label}</p>
+                  {type.urgent && (
+                    <span className="text-[9px] font-black text-red-400 bg-red-400/10 border border-red-400/22 rounded-full px-2 py-0.5 uppercase tracking-wide shrink-0">
+                      Urgent
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-white/30 mt-0.5 leading-relaxed">{type.sub}</p>
+              </div>
+              <ChevronRight size={15} color="rgba(255,255,255,0.15)" className="shrink-0" />
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-white/18 text-center">Anonymous — your identity is never recorded.</p>
+      </div>
+    </Shell>
   );
 }
 
-function Screen({ children }) {
+/* ── Shared components ──────────────────────────────────────────────── */
+
+function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-[#06040e] flex items-center justify-center px-4 py-5 relative overflow-hidden font-sans">
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.12) 0%, transparent 60%)" }}
-      />
-      {children}
+    <div className="min-h-screen bg-[#07050f] text-white flex items-center justify-center px-5 py-10 relative overflow-hidden font-sans">
+      {/* Ambient glows */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] opacity-[0.06]"
+          style={{ background:"radial-gradient(ellipse,#F07028,transparent 65%)" }} />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] opacity-[0.04]"
+          style={{ background:"radial-gradient(ellipse,#5CE8D8,transparent 65%)" }} />
+      </div>
+      <div className="relative z-10 w-full flex flex-col items-center">
+        {children}
+      </div>
     </div>
   );
 }
 
-function VehiclePlate({ number }) {
+function PlateDisplay({ vehicle, prominent }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="flex items-center gap-2.5 bg-[rgba(240,112,40,0.08)] border-[1.5px] border-[rgba(240,112,40,0.25)] rounded-[14px] py-3 px-6 w-full justify-center">
-        <Car size={16} color="#F07028" />
-        <span className="text-[26px] font-black tracking-[5px] text-[#F07028]">{number}</span>
+    <div className={`flex flex-col items-center gap-2 ${prominent ? "py-2" : ""}`}>
+      <div className="flex items-center gap-3 rounded-2xl px-7 py-4 w-full justify-center"
+        style={{ background:"rgba(240,112,40,0.08)", border:"1.5px solid rgba(240,112,40,0.22)" }}>
+        <Car size={prominent ? 18 : 14} color="#F07028" />
+        <span style={{
+          fontSize: prominent ? "28px" : "22px",
+          fontWeight: 900,
+          letterSpacing: "5px",
+          color: "#F07028",
+        }}>
+          {vehicle.vehicleNumber}
+        </span>
       </div>
-      <span className="text-[11px] text-white/[0.28] tracking-wide">Registered Vehicle</span>
+      <div className="flex items-center gap-3">
+        <span className="text-[11px] text-white/22">Registered Vehicle</span>
+        {vehicle.bloodGroup && (
+          <>
+            <span className="text-white/12">·</span>
+            <div className="flex items-center gap-1.5">
+              <Droplets size={10} color="#5CE8D8" />
+              <span className="text-[11px] font-black text-[#5CE8D8]">{vehicle.bloodGroup}</span>
+            </div>
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+function EmergencyBtn({ compact }) {
+  return (
+    <a href="tel:112"
+      className={`flex items-center justify-center gap-2.5 rounded-xl text-white font-black no-underline transition-opacity hover:opacity-90 ${compact ? "py-3 mx-4 mb-4 text-[13px]" : "py-4 w-full text-[15px]"}`}
+      style={{ background:"linear-gradient(135deg,#dc2626,#ef4444)", boxShadow:"0 8px 24px rgba(239,68,68,0.3)" }}>
+      <Phone size={compact ? 14 : 18} /> Call 112 — Emergency Services
+    </a>
   );
 }
 
 function SummaryRow({ label, value, color }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className="text-xs text-white/35">{label}</span>
-      <span className="text-[13px] font-bold" style={{ color: color || "rgba(255,255,255,0.85)" }}>{value}</span>
+    <div className="flex justify-between items-start gap-4 px-5 py-3.5">
+      <span className="text-[11px] text-white/25 shrink-0 mt-0.5">{label}</span>
+      <span className="text-[13px] font-semibold text-right leading-relaxed"
+        style={{ color: color || "rgba(255,255,255,0.75)" }}>
+        {value}
+      </span>
     </div>
   );
 }
 
-function Loader() {
-  return (
-    <div className="flex flex-col items-center gap-3.5">
-      <div className="w-9 h-9 rounded-full border-[3px] border-[rgba(240,112,40,0.15)] border-t-[#F07028] animate-spin" />
-      <p className="text-[13px] text-white/35">Looking up vehicle…</p>
-    </div>
-  );
-}
+const STYLES = `
+  .inp {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 14px;
+    padding: 13px 16px;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .inp:focus {
+    border-color: rgba(240,112,40,0.45);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 0 4px rgba(240,112,40,0.07);
+  }
+  .inp::placeholder { color: rgba(255,255,255,0.18); }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .slide-up { animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+  .pop-in   { animation: popIn  0.4s cubic-bezier(0.22,1,0.36,1) both; }
+`;
