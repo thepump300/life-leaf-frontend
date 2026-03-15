@@ -48,6 +48,10 @@ export const authAPI = {
     const res = await api.post("/api/auth/login", data);
     return res.data;
   },
+  googleAuth: async (access_token) => {
+    const res = await api.post("/api/auth/google", { access_token });
+    return res.data;
+  },
   forgotPassword: async (email) => {
     const res = await api.post("/api/auth/forgot-password", { email });
     return res.data;

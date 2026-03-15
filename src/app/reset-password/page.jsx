@@ -8,7 +8,7 @@ import { authAPI } from "@/services/api";
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#06040e" }} />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#06040e]" />}>
       <ResetPasswordForm />
     </Suspense>
   );
@@ -20,18 +20,23 @@ function ResetPasswordForm() {
   const token   = params.get("token") || "";
   const email   = params.get("email") || "";
 
-  const [password,  setPassword]  = useState("");
-  const [confirm,   setConfirm]   = useState("");
-  const [showPwd,   setShowPwd]   = useState(false);
-  const [loading,   setLoading]   = useState(false);
-  const [done,      setDone]      = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [showPwd,  setShowPwd]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [done,     setDone]     = useState(false);
 
   if (!token || !email) {
     return (
-      <div style={S.page}>
-        <div style={S.card}>
-          <p style={{ color: "#ef4444", textAlign: "center" }}>Invalid or expired reset link. Please request a new one.</p>
-          <button style={S.btn} onClick={() => router.push("/forgot-password")}>Request New Link</button>
+      <div className="min-h-screen bg-[#06040e] flex items-center justify-center px-4 py-5 relative font-sans">
+        <div className="w-full max-w-[400px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-7 py-9 text-white flex flex-col items-center gap-5 relative z-[1] backdrop-blur-md">
+          <p className="text-red-500 text-center">Invalid or expired reset link. Please request a new one.</p>
+          <button
+            className="w-full bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-[15px] py-3.5 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)]"
+            onClick={() => router.push("/forgot-password")}
+          >
+            Request New Link
+          </button>
         </div>
       </div>
     );
@@ -56,27 +61,40 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div style={S.page}>
-      <div style={S.glow} />
+    <div className="min-h-screen bg-[#06040e] flex items-center justify-center px-4 py-5 relative font-sans">
+      {/* Glow */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.10) 0%, transparent 60%)" }}
+      />
 
-      <div style={S.card}>
+      <div className="w-full max-w-[400px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-7 py-9 text-white flex flex-col items-center gap-5 relative z-[1] backdrop-blur-md">
         {done ? (
           <>
-            <div style={S.iconWrap}><CheckCircle2 size={28} color="#22c55e" /></div>
-            <h1 style={S.title}>Password updated!</h1>
-            <p style={S.sub}>Redirecting you to your dashboard…</p>
+            <div className="w-16 h-16 rounded-full bg-[rgba(240,112,40,0.12)] border border-[rgba(240,112,40,0.25)] flex items-center justify-center">
+              <CheckCircle2 size={28} color="#22c55e" />
+            </div>
+            <h1 className="text-[22px] font-extrabold text-white m-0">Password updated!</h1>
+            <p className="text-sm text-white/50 text-center leading-relaxed m-0">Redirecting you to your dashboard…</p>
           </>
         ) : (
           <>
-            <div style={S.iconWrap}><Lock size={28} color="#F07028" /></div>
-            <h1 style={S.title}>Set new password</h1>
-            <p style={S.sub}>Choose a strong password for <strong style={{ color: "#F07028" }}>{email}</strong></p>
+            <div className="w-16 h-16 rounded-full bg-[rgba(240,112,40,0.12)] border border-[rgba(240,112,40,0.25)] flex items-center justify-center">
+              <Lock size={28} color="#F07028" />
+            </div>
+            <h1 className="text-[22px] font-extrabold text-white m-0">Set new password</h1>
+            <p className="text-sm text-white/50 text-center leading-relaxed m-0">
+              Choose a strong password for <strong className="text-[#F07028]">{email}</strong>
+            </p>
 
-            <form onSubmit={handleSubmit} style={S.form}>
-              <div style={S.inputWrap}>
-                <span style={S.inputIcon}><Lock size={15} color="rgba(255,255,255,0.4)" /></span>
+            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3.5">
+              {/* New password */}
+              <div className="flex items-center bg-white/[0.06] border-[1.5px] border-white/10 rounded-xl overflow-hidden">
+                <span className="px-3.5 flex items-center shrink-0">
+                  <Lock size={15} color="rgba(255,255,255,0.4)" />
+                </span>
                 <input
-                  style={S.input}
+                  className="flex-1 bg-transparent border-none text-white text-sm py-3.5 outline-none placeholder:text-white/25"
                   type={showPwd ? "text" : "password"}
                   placeholder="New password"
                   value={password}
@@ -84,15 +102,22 @@ function ResetPasswordForm() {
                   autoComplete="new-password"
                   required
                 />
-                <button type="button" style={S.eyeBtn} onClick={() => setShowPwd((v) => !v)}>
+                <button
+                  type="button"
+                  className="bg-transparent border-none text-white/40 px-3.5 flex items-center cursor-pointer"
+                  onClick={() => setShowPwd((v) => !v)}
+                >
                   {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
 
-              <div style={S.inputWrap}>
-                <span style={S.inputIcon}><Lock size={15} color="rgba(255,255,255,0.4)" /></span>
+              {/* Confirm password */}
+              <div className="flex items-center bg-white/[0.06] border-[1.5px] border-white/10 rounded-xl overflow-hidden">
+                <span className="px-3.5 flex items-center shrink-0">
+                  <Lock size={15} color="rgba(255,255,255,0.4)" />
+                </span>
                 <input
-                  style={S.input}
+                  className="flex-1 bg-transparent border-none text-white text-sm py-3.5 outline-none placeholder:text-white/25"
                   type="password"
                   placeholder="Confirm new password"
                   value={confirm}
@@ -103,12 +128,16 @@ function ResetPasswordForm() {
               </div>
 
               {password && confirm && (
-                <p style={{ fontSize: 12, color: password === confirm ? "#22c55e" : "#ef4444", margin: 0 }}>
+                <p className={`text-xs m-0 ${password === confirm ? "text-green-500" : "text-red-500"}`}>
                   {password === confirm ? "Passwords match" : "Passwords do not match"}
                 </p>
               )}
 
-              <button type="submit" style={S.btn} disabled={loading}>
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-[15px] py-3.5 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
+              >
                 {loading ? "Updating…" : "Update Password"}
               </button>
             </form>
@@ -118,23 +147,3 @@ function ResetPasswordForm() {
     </div>
   );
 }
-
-const S = {
-  page: { minHeight: "100vh", background: "#06040e", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px", fontFamily: "var(--font-geist-sans), sans-serif", position: "relative" },
-  glow: { position: "fixed", inset: 0, background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.10) 0%, transparent 60%)", pointerEvents: "none" },
-
-  card: { width: "100%", maxWidth: 400, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, padding: "36px 28px", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", gap: 20, position: "relative", zIndex: 1, backdropFilter: "blur(12px)" },
-
-  iconWrap: { width: 64, height: 64, borderRadius: "50%", background: "rgba(240,112,40,0.12)", border: "1px solid rgba(240,112,40,0.25)", display: "flex", alignItems: "center", justifyContent: "center" },
-
-  title: { fontSize: 22, fontWeight: 800, color: "#fff", margin: 0 },
-  sub: { fontSize: 14, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, margin: 0 },
-
-  form: { width: "100%", display: "flex", flexDirection: "column", gap: 14 },
-  inputWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.10)", borderRadius: 12, overflow: "hidden" },
-  inputIcon: { padding: "0 14px", display: "flex", alignItems: "center", flexShrink: 0 },
-  input: { flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: 14, padding: "13px 14px 13px 0", outline: "none" },
-  eyeBtn: { background: "transparent", border: "none", color: "rgba(255,255,255,0.4)", padding: "0 14px", cursor: "pointer", display: "flex", alignItems: "center" },
-
-  btn: { width: "100%", background: "linear-gradient(135deg,#FFB347,#F07028,#E8411A)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 15, padding: "14px", cursor: "pointer", boxShadow: "0 4px 20px rgba(240,112,40,0.3)" },
-};

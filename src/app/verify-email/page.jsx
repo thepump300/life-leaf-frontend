@@ -8,25 +8,24 @@ import { authAPI } from "@/services/api";
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#06040e" }} />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#06040e]" />}>
       <VerifyEmailForm />
     </Suspense>
   );
 }
 
 function VerifyEmailForm() {
-  const router       = useRouter();
-  const params       = useSearchParams();
-  const email        = params.get("email") || "";
+  const router      = useRouter();
+  const params      = useSearchParams();
+  const email       = params.get("email") || "";
 
-  const [otp,        setOtp]        = useState(["", "", "", "", "", ""]);
-  const [loading,    setLoading]    = useState(false);
-  const [resending,  setResending]  = useState(false);
-  const [countdown,  setCountdown]  = useState(30);
-  const [canResend,  setCanResend]  = useState(false);
-  const inputRefs    = useRef([]);
+  const [otp,       setOtp]       = useState(["", "", "", "", "", ""]);
+  const [loading,   setLoading]   = useState(false);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [canResend, setCanResend] = useState(false);
+  const inputRefs   = useRef([]);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (countdown <= 0) { setCanResend(true); return; }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -91,33 +90,40 @@ function VerifyEmailForm() {
   };
 
   return (
-    <div style={S.page}>
-      <div style={S.glow} />
+    <div className="min-h-screen bg-[#06040e] flex items-center justify-center px-4 py-5 relative font-sans">
+      {/* Glow */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.10) 0%, transparent 60%)" }}
+      />
 
-      <div style={S.card}>
-        <button style={S.backBtn} onClick={() => router.push("/register")}>
+      <div className="w-full max-w-[420px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-7 py-9 text-white flex flex-col items-center gap-5 relative z-[1] backdrop-blur-md">
+        <button
+          className="self-start flex items-center gap-1.5 bg-transparent border-none text-white/40 text-[13px] cursor-pointer p-0"
+          onClick={() => router.push("/register")}
+        >
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div style={S.iconWrap}>
+        <div className="w-16 h-16 rounded-full bg-[rgba(240,112,40,0.12)] border border-[rgba(240,112,40,0.25)] flex items-center justify-center">
           <Mail size={28} color="#F07028" />
         </div>
 
-        <h1 style={S.title}>Check your email</h1>
-        <p style={S.sub}>
+        <h1 className="text-[22px] font-extrabold text-white m-0">Check your email</h1>
+        <p className="text-sm text-white/50 text-center leading-relaxed m-0">
           We sent a 6-digit code to<br />
-          <strong style={{ color: "#F07028" }}>{email || "your email"}</strong>
+          <strong className="text-[#F07028]">{email || "your email"}</strong>
         </p>
 
         {/* OTP Boxes */}
-        <div style={S.otpRow} onPaste={handlePaste}>
+        <div className="flex gap-2.5" onPaste={handlePaste}>
           {otp.map((digit, i) => (
             <input
               key={i}
               ref={(el) => (inputRefs.current[i] = el)}
+              className="w-[46px] h-14 rounded-xl bg-white/[0.06] text-[22px] font-extrabold text-center outline-none transition-[border-color,color] duration-200"
               style={{
-                ...S.otpBox,
-                borderColor: digit ? "#F07028" : "rgba(255,255,255,0.12)",
+                border: `1.5px solid ${digit ? "#F07028" : "rgba(255,255,255,0.12)"}`,
                 color: digit ? "#F07028" : "#fff",
               }}
               type="text"
@@ -131,28 +137,36 @@ function VerifyEmailForm() {
           ))}
         </div>
 
-        <button style={S.verifyBtn} onClick={handleVerify} disabled={loading}>
+        <button
+          className="w-full bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-[15px] py-3.5 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleVerify}
+          disabled={loading}
+        >
           {loading ? (
-            <span style={S.btnInner}><Spinner /> Verifying…</span>
+            <span className="flex items-center justify-center gap-2"><Spinner /> Verifying…</span>
           ) : (
-            <span style={S.btnInner}><CheckCircle2 size={16} /> Verify Email</span>
+            <span className="flex items-center justify-center gap-2"><CheckCircle2 size={16} /> Verify Email</span>
           )}
         </button>
 
-        <div style={S.resendRow}>
-          <span style={S.resendLabel}>Didn't get it?</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] text-white/40">Didn&apos;t get it?</span>
           {canResend ? (
-            <button style={S.resendBtn} onClick={handleResend} disabled={resending}>
+            <button
+              className="flex items-center gap-1 bg-transparent border-none text-[#F07028] text-[13px] font-semibold cursor-pointer p-0 disabled:opacity-50"
+              onClick={handleResend}
+              disabled={resending}
+            >
               <RefreshCw size={13} />
               {resending ? "Sending…" : "Resend OTP"}
             </button>
           ) : (
-            <span style={S.countdownText}>Resend in {countdown}s</span>
+            <span className="text-[13px] text-white/30">Resend in {countdown}s</span>
           )}
         </div>
 
-        <p style={S.note}>
-          The code expires in 10 minutes. Check your spam folder if you don't see it.
+        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed m-0">
+          The code expires in 10 minutes. Check your spam folder if you don&apos;t see it.
         </p>
       </div>
     </div>
@@ -161,36 +175,9 @@ function VerifyEmailForm() {
 
 function Spinner() {
   return (
-    <svg style={{ animation: "spin 0.8s linear infinite" }} width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" opacity="0.75" />
     </svg>
   );
 }
-
-const S = {
-  page: { minHeight: "100vh", background: "#06040e", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px", fontFamily: "var(--font-geist-sans), sans-serif", position: "relative" },
-  glow: { position: "fixed", inset: 0, background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.10) 0%, transparent 60%)", pointerEvents: "none" },
-
-  card: { width: "100%", maxWidth: 420, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, padding: "36px 28px", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", gap: 20, position: "relative", zIndex: 1, backdropFilter: "blur(12px)" },
-
-  backBtn: { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", color: "rgba(255,255,255,0.38)", fontSize: 13, cursor: "pointer", padding: 0 },
-
-  iconWrap: { width: 64, height: 64, borderRadius: "50%", background: "rgba(240,112,40,0.12)", border: "1px solid rgba(240,112,40,0.25)", display: "flex", alignItems: "center", justifyContent: "center" },
-
-  title: { fontSize: 22, fontWeight: 800, color: "#fff", margin: 0 },
-  sub: { fontSize: 14, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, margin: 0 },
-
-  otpRow: { display: "flex", gap: 10 },
-  otpBox: { width: 46, height: 56, borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1.5px solid", fontSize: 22, fontWeight: 800, textAlign: "center", outline: "none", transition: "border-color 0.2s, color 0.2s", fontFamily: "inherit" },
-
-  verifyBtn: { width: "100%", background: "linear-gradient(135deg,#FFB347,#F07028,#E8411A)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 15, padding: "14px", cursor: "pointer", boxShadow: "0 4px 20px rgba(240,112,40,0.3)" },
-  btnInner: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
-
-  resendRow: { display: "flex", alignItems: "center", gap: 8 },
-  resendLabel: { fontSize: 13, color: "rgba(255,255,255,0.4)" },
-  resendBtn: { display: "flex", alignItems: "center", gap: 5, background: "transparent", border: "none", color: "#F07028", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 },
-  countdownText: { fontSize: 13, color: "rgba(255,255,255,0.3)" },
-
-  note: { fontSize: 11, color: "rgba(255,255,255,0.22)", textAlign: "center", lineHeight: 1.6, margin: 0 },
-};

@@ -9,17 +9,16 @@ import { profileAPI } from "@/services/api";
 
 const BLOOD_GROUPS  = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−"];
 const EMPTY_CONTACT = { name: "", phone: "" };
-
-const STEPS = ["Vehicle Info", "Emergency Contacts", "Review"];
+const STEPS         = ["Vehicle Info", "Emergency Contacts", "Review"];
 
 export default function ProfileSetupPage() {
   const { loading } = useAuth();
   const router      = useRouter();
 
-  const [isEdit, setIsEdit]     = useState(false);
-  const [saving, setSaving]     = useState(false);
+  const [isEdit,   setIsEdit]   = useState(false);
+  const [saving,   setSaving]   = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [step, setStep]         = useState(0);
+  const [step,     setStep]     = useState(0);
 
   const [form, setForm] = useState({
     name:              "",
@@ -85,37 +84,60 @@ export default function ProfileSetupPage() {
   };
 
   if (loading || fetching) return (
-    <div style={S.page}><div style={S.spinner} /></div>
+    <div className="min-h-screen bg-[#06040e] flex items-center justify-center">
+      <div className="w-9 h-9 rounded-full border-[3px] border-[rgba(240,112,40,0.15)] border-t-[#F07028] animate-spin" />
+    </div>
   );
 
   return (
-    <div style={S.page}>
-      <div style={S.glowA} />
+    <div className="min-h-screen bg-[#06040e] text-white font-sans relative overflow-hidden">
+      {/* Glow */}
+      <div
+        className="fixed w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(240,112,40,0.10), transparent 70%)", top: -150, left: -150 }}
+      />
 
-      <div style={S.container}>
-        {/* ── Back ── */}
-        <button style={S.backBtn} onClick={() => router.push("/")}>
+      <div className="max-w-[1000px] mx-auto px-6 pt-9 pb-20 relative z-[1]">
+        {/* Back */}
+        <button
+          className="flex items-center gap-1.5 bg-transparent border-none text-white/40 text-[13px] cursor-pointer mb-8 p-0"
+          onClick={() => router.push("/")}
+        >
           <ArrowLeft size={15} /> Back to Dashboard
         </button>
 
-        <div style={S.layout}>
+        <div className="grid grid-cols-[1fr_340px] gap-6 items-start">
           {/* ── Left: Form ── */}
-          <div style={S.formSide}>
+          <div>
             {/* Progress steps */}
-            <div style={S.steps}>
+            <div className="flex items-center mb-6">
               {STEPS.map((label, i) => (
-                <div key={i} style={S.stepWrap} onClick={() => i < step + 1 && setStep(i)}>
-                  <div style={{
-                    ...S.stepCircle,
-                    background: i < step ? "#22c55e" : i === step ? "#F07028" : "rgba(255,255,255,0.08)",
-                    border: i === step ? "2px solid #F07028" : i < step ? "2px solid #22c55e" : "2px solid rgba(255,255,255,0.12)",
-                    cursor: i < step ? "pointer" : "default",
-                  }}>
-                    {i < step ? <CheckCircle2 size={14} color="#fff" /> : <span style={S.stepNum}>{i + 1}</span>}
+                <div
+                  key={i}
+                  className="flex items-center gap-2 flex-1"
+                  onClick={() => i < step + 1 && setStep(i)}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+                    style={{
+                      background: i < step ? "#22c55e" : i === step ? "#F07028" : "rgba(255,255,255,0.08)",
+                      border: i === step ? "2px solid #F07028" : i < step ? "2px solid #22c55e" : "2px solid rgba(255,255,255,0.12)",
+                      cursor: i < step ? "pointer" : "default",
+                    }}
+                  >
+                    {i < step
+                      ? <CheckCircle2 size={14} color="#fff" />
+                      : <span className="text-[13px] font-bold text-white/50">{i + 1}</span>
+                    }
                   </div>
-                  <span style={{ ...S.stepLabel, color: i === step ? "#fff" : "rgba(255,255,255,0.35)" }}>{label}</span>
+                  <span className={`text-xs font-medium whitespace-nowrap ${i === step ? "text-white" : "text-white/35"}`}>
+                    {label}
+                  </span>
                   {i < STEPS.length - 1 && (
-                    <div style={{ ...S.stepLine, background: i < step ? "#22c55e" : "rgba(255,255,255,0.08)" }} />
+                    <div
+                      className="flex-1 h-0.5 rounded mx-2 transition-colors duration-300"
+                      style={{ background: i < step ? "#22c55e" : "rgba(255,255,255,0.08)" }}
+                    />
                   )}
                 </div>
               ))}
@@ -123,38 +145,50 @@ export default function ProfileSetupPage() {
 
             {/* ── Step 0: Vehicle Info ── */}
             {step === 0 && (
-              <div style={S.card}>
-                <div style={S.cardHeader}>
-                  <div style={S.cardIconWrap}><Car size={20} color="#F07028" /></div>
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-[20px] p-7 flex flex-col gap-6">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-[rgba(240,112,40,0.12)] flex items-center justify-center shrink-0">
+                    <Car size={20} color="#F07028" />
+                  </div>
                   <div>
-                    <h2 style={S.cardTitle}>Vehicle Details</h2>
-                    <p style={S.cardSub}>Enter your vehicle registration information</p>
+                    <h2 className="text-[18px] font-extrabold text-white m-0">Vehicle Details</h2>
+                    <p className="text-xs text-white/40 mt-0.5">Enter your vehicle registration information</p>
                   </div>
                 </div>
 
-                <div style={S.fields}>
+                <div className="flex flex-col gap-3.5">
                   <FormField label="Your Name" icon={<User size={15} />}>
-                    <input style={S.input} type="text" placeholder="Full name" value={form.name}
-                      onChange={(e) => set("name", e.target.value)} />
+                    <input
+                      className="w-full bg-white/[0.05] border-[1.5px] border-white/[0.09] rounded-xl text-white text-sm py-3 px-3.5 outline-none box-border transition-colors duration-200 placeholder:text-white/30"
+                      type="text" placeholder="Full name" value={form.name}
+                      onChange={(e) => set("name", e.target.value)}
+                    />
                   </FormField>
 
                   <FormField label="Vehicle Number *" icon={<Car size={15} />}>
-                    <input style={{ ...S.input, textTransform: "uppercase", letterSpacing: 3, fontWeight: 700 }}
+                    <input
+                      className="w-full bg-white/[0.05] border-[1.5px] border-white/[0.09] rounded-xl text-white text-sm py-3 px-3.5 outline-none box-border transition-colors duration-200 uppercase tracking-[3px] font-bold placeholder:text-white/30"
                       type="text" placeholder="e.g. MH12AB1234" value={form.vehicleNumber}
-                      onChange={(e) => set("vehicleNumber", e.target.value.toUpperCase())} required />
+                      onChange={(e) => set("vehicleNumber", e.target.value.toUpperCase())} required
+                    />
                   </FormField>
 
                   <FormField label="Blood Group (optional)" icon={<Droplets size={15} />}>
-                    <select style={{ ...S.input, cursor: "pointer" }} value={form.bloodGroup}
-                      onChange={(e) => set("bloodGroup", e.target.value)}>
+                    <select
+                      className="w-full bg-white/[0.05] border-[1.5px] border-white/[0.09] rounded-xl text-white text-sm py-3 px-3.5 outline-none box-border cursor-pointer appearance-none"
+                      value={form.bloodGroup}
+                      onChange={(e) => set("bloodGroup", e.target.value)}
+                    >
                       <option value="">Select blood group</option>
                       {BLOOD_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </FormField>
                 </div>
 
-                <button style={S.nextBtn}
-                  onClick={() => { if (!form.vehicleNumber.trim()) { toast.error("Vehicle number required"); return; } setStep(1); }}>
+                <button
+                  className="flex-1 bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-sm py-[13px] px-6 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)]"
+                  onClick={() => { if (!form.vehicleNumber.trim()) { toast.error("Vehicle number required"); return; } setStep(1); }}
+                >
                   Continue →
                 </button>
               </div>
@@ -162,82 +196,121 @@ export default function ProfileSetupPage() {
 
             {/* ── Step 1: Emergency Contacts ── */}
             {step === 1 && (
-              <div style={S.card}>
-                <div style={S.cardHeader}>
-                  <div style={S.cardIconWrap}><Phone size={20} color="#F07028" /></div>
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-[20px] p-7 flex flex-col gap-6">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-[rgba(240,112,40,0.12)] flex items-center justify-center shrink-0">
+                    <Phone size={20} color="#F07028" />
+                  </div>
                   <div>
-                    <h2 style={S.cardTitle}>Emergency Contacts</h2>
-                    <p style={S.cardSub}>Who should be notified in case of an incident?</p>
+                    <h2 className="text-[18px] font-extrabold text-white m-0">Emergency Contacts</h2>
+                    <p className="text-xs text-white/40 mt-0.5">Who should be notified in case of an incident?</p>
                   </div>
                 </div>
 
-                <div style={S.fields}>
+                <div className="flex flex-col gap-3.5">
                   {form.emergencyContacts.map((c, idx) => (
-                    <div key={idx} style={S.contactBlock}>
-                      <div style={S.contactBlockHeader}>
-                        <div style={S.contactBadge}>Contact {idx + 1}{idx === 0 ? " *" : ""}</div>
+                    <div key={idx} className="bg-white/[0.03] border border-white/[0.07] rounded-[14px] p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-[11px] font-bold text-[#F07028] bg-[rgba(240,112,40,0.12)] rounded-md px-[9px] py-[3px] uppercase tracking-wide">
+                          Contact {idx + 1}{idx === 0 ? " *" : ""}
+                        </div>
                         {idx > 0 && (
-                          <button style={S.removeBtn} type="button"
-                            onClick={() => set("emergencyContacts", form.emergencyContacts.filter((_, i) => i !== idx))}>
+                          <button
+                            className="flex items-center gap-1 bg-transparent border-none text-red-500 text-xs cursor-pointer"
+                            type="button"
+                            onClick={() => set("emergencyContacts", form.emergencyContacts.filter((_, i) => i !== idx))}
+                          >
                             <Trash2 size={13} /> Remove
                           </button>
                         )}
                       </div>
-                      <input style={S.input} type="text" placeholder="Contact name"
-                        value={c.name} onChange={(e) => setContact(idx, "name", e.target.value)} required={idx === 0} />
-                      <input style={{ ...S.input, marginTop: 8 }} type="tel" placeholder="+91 98765 43210"
-                        value={c.phone} onChange={(e) => setContact(idx, "phone", e.target.value)} required={idx === 0} />
+                      <input
+                        className="w-full bg-white/[0.05] border-[1.5px] border-white/[0.09] rounded-xl text-white text-sm py-3 px-3.5 outline-none box-border placeholder:text-white/30"
+                        type="text" placeholder="Contact name"
+                        value={c.name} onChange={(e) => setContact(idx, "name", e.target.value)} required={idx === 0}
+                      />
+                      <input
+                        className="w-full bg-white/[0.05] border-[1.5px] border-white/[0.09] rounded-xl text-white text-sm py-3 px-3.5 outline-none box-border mt-2 placeholder:text-white/30"
+                        type="tel" placeholder="+91 98765 43210"
+                        value={c.phone} onChange={(e) => setContact(idx, "phone", e.target.value)} required={idx === 0}
+                      />
                     </div>
                   ))}
 
                   {form.emergencyContacts.length < 2 && (
-                    <button style={S.addContactBtn} type="button"
-                      onClick={() => set("emergencyContacts", [...form.emergencyContacts, { ...EMPTY_CONTACT }])}>
+                    <button
+                      className="flex items-center justify-center gap-1.5 bg-transparent border-[1.5px] border-dashed border-[rgba(240,112,40,0.3)] rounded-xl text-[#F07028] text-[13px] font-medium py-3 cursor-pointer"
+                      type="button"
+                      onClick={() => set("emergencyContacts", [...form.emergencyContacts, { ...EMPTY_CONTACT }])}
+                    >
                       <Plus size={14} /> Add second contact (optional)
                     </button>
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button style={S.ghostBtn} onClick={() => setStep(0)}>← Back</button>
-                  <button style={S.nextBtn} onClick={() => setStep(2)}>Review →</button>
+                <div className="flex gap-2.5">
+                  <button
+                    className="bg-white/[0.05] border border-white/10 rounded-xl text-white/60 font-semibold text-sm py-[13px] px-5 cursor-pointer"
+                    onClick={() => setStep(0)}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="flex-1 bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-sm py-[13px] px-6 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)]"
+                    onClick={() => setStep(2)}
+                  >
+                    Review →
+                  </button>
                 </div>
               </div>
             )}
 
             {/* ── Step 2: Review ── */}
             {step === 2 && (
-              <div style={S.card}>
-                <div style={S.cardHeader}>
-                  <div style={S.cardIconWrap}><CheckCircle2 size={20} color="#F07028" /></div>
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-[20px] p-7 flex flex-col gap-6">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-[rgba(240,112,40,0.12)] flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={20} color="#F07028" />
+                  </div>
                   <div>
-                    <h2 style={S.cardTitle}>Review & Confirm</h2>
-                    <p style={S.cardSub}>Make sure everything looks correct</p>
+                    <h2 className="text-[18px] font-extrabold text-white m-0">Review &amp; Confirm</h2>
+                    <p className="text-xs text-white/40 mt-0.5">Make sure everything looks correct</p>
                   </div>
                 </div>
 
-                <div style={S.reviewSection}>
+                <div className="flex flex-col gap-2.5 bg-white/[0.03] rounded-[14px] p-4">
                   <ReviewRow label="Name"           value={form.name || "—"} />
                   <ReviewRow label="Vehicle Number" value={form.vehicleNumber} highlight />
                   <ReviewRow label="Blood Group"    value={form.bloodGroup || "Not specified"} />
                 </div>
 
-                <div style={S.reviewSection}>
-                  <p style={S.reviewSectionLabel}>Emergency Contacts</p>
+                <div className="flex flex-col gap-2.5 bg-white/[0.03] rounded-[14px] p-4">
+                  <p className="text-[11px] font-bold text-white/30 uppercase tracking-wide mb-1">Emergency Contacts</p>
                   {form.emergencyContacts.filter((c) => c.name || c.phone).map((c, i) => (
-                    <div key={i} style={S.reviewContact}>
-                      <div style={S.reviewContactAvatar}>{c.name?.[0]?.toUpperCase()}</div>
+                    <div key={i} className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-[rgba(240,112,40,0.15)] flex items-center justify-center text-xs font-bold text-[#F07028]">
+                        {c.name?.[0]?.toUpperCase()}
+                      </div>
                       <div>
-                        <p style={S.reviewContactName}>{c.name}</p>
-                        <p style={S.reviewContactPhone}>{c.phone}</p>
+                        <p className="text-[13px] font-semibold text-white/80 m-0">{c.name}</p>
+                        <p className="text-[11px] text-white/35 mt-0.5">{c.phone}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button style={S.ghostBtn} onClick={() => setStep(1)}>← Back</button>
-                  <button style={{ ...S.nextBtn, flex: 1 }} onClick={handleSubmit} disabled={saving}>
+                <div className="flex gap-2.5">
+                  <button
+                    className="bg-white/[0.05] border border-white/10 rounded-xl text-white/60 font-semibold text-sm py-[13px] px-5 cursor-pointer"
+                    onClick={() => setStep(1)}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="flex-1 bg-gradient-to-br from-[#FFB347] via-[#F07028] to-[#E8411A] border-none rounded-xl text-white font-bold text-sm py-[13px] px-6 cursor-pointer shadow-[0_4px_20px_rgba(240,112,40,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                  >
                     {saving ? "Saving…" : isEdit ? "Save Changes" : "Generate QR Code ✓"}
                   </button>
                 </div>
@@ -246,46 +319,50 @@ export default function ProfileSetupPage() {
           </div>
 
           {/* ── Right: Preview panel ── */}
-          <div style={S.previewSide}>
-            <div style={S.previewCard}>
-              <p style={S.previewLabel}>Live Preview</p>
+          <div className="flex flex-col gap-3 sticky top-[100px]">
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-[20px] p-6 flex flex-col gap-3.5">
+              <p className="text-[11px] font-bold text-white/30 uppercase tracking-wide">Live Preview</p>
 
-              <div style={S.previewPlate}>
+              <div className="flex items-center gap-2 bg-[rgba(240,112,40,0.08)] border border-[rgba(240,112,40,0.18)] rounded-[10px] py-2.5 px-3.5">
                 <Car size={13} color="#F07028" />
-                <span style={S.previewPlateNum}>{form.vehicleNumber || "MH12AB1234"}</span>
+                <span className="text-[18px] font-extrabold tracking-[3px] text-[#F07028]">
+                  {form.vehicleNumber || "MH12AB1234"}
+                </span>
               </div>
 
-              {form.name && <p style={S.previewName}>{form.name}</p>}
+              {form.name && <p className="text-sm font-semibold text-white/70">{form.name}</p>}
 
               {form.bloodGroup && (
-                <div style={S.previewBlood}>
+                <div className="flex items-center gap-1.5">
                   <Droplets size={12} color="#5CE8D8" />
-                  <span style={{ color: "#5CE8D8", fontSize: 13, fontWeight: 700 }}>{form.bloodGroup}</span>
+                  <span className="text-[#5CE8D8] text-[13px] font-bold">{form.bloodGroup}</span>
                 </div>
               )}
 
-              <div style={S.previewQrBox}>
-                <div style={S.previewQrPlaceholder}>
-                  <p style={S.previewQrText}>QR code will appear here after saving</p>
+              <div className="flex justify-center">
+                <div className="w-[140px] h-[140px] border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center p-3">
+                  <p className="text-[11px] text-white/25 text-center leading-relaxed">
+                    QR code will appear here after saving
+                  </p>
                 </div>
               </div>
 
               {form.emergencyContacts.filter((c) => c.name).length > 0 && (
-                <div style={S.previewContacts}>
-                  <p style={S.previewContactsLabel}>Emergency Contacts</p>
+                <div className="border-t border-white/[0.06] pt-3 flex flex-col gap-2">
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-wide">Emergency Contacts</p>
                   {form.emergencyContacts.filter((c) => c.name).map((c, i) => (
-                    <div key={i} style={S.previewContactRow}>
-                      <div style={S.previewContactDot} />
-                      <span style={S.previewContactName}>{c.name}</span>
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F07028] shrink-0" />
+                      <span className="text-[13px] text-white/65">{c.name}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div style={S.previewNote}>
+            <p className="text-xs text-white/30 leading-relaxed text-center px-2">
               🔒 Phone numbers are <strong>never</strong> exposed in the QR code or public scan page.
-            </div>
+            </p>
           </div>
         </div>
       </div>
@@ -295,9 +372,9 @@ export default function ProfileSetupPage() {
 
 function FormField({ label, icon, children }) {
   return (
-    <div style={S.fieldWrap}>
-      <label style={S.fieldLabel}>
-        <span style={{ color: "#F07028" }}>{icon}</span>
+    <div className="flex flex-col gap-1.5">
+      <label className="flex items-center gap-1.5 text-xs font-medium text-white/55">
+        <span className="text-[#F07028]">{icon}</span>
         {label}
       </label>
       {children}
@@ -307,83 +384,11 @@ function FormField({ label, icon, children }) {
 
 function ReviewRow({ label, value, highlight }) {
   return (
-    <div style={S.reviewRow}>
-      <span style={S.reviewLabel}>{label}</span>
-      <span style={{ ...S.reviewValue, color: highlight ? "#F07028" : "rgba(255,255,255,0.85)", letterSpacing: highlight ? 2 : 0, fontWeight: highlight ? 800 : 500 }}>
+    <div className="flex justify-between items-center">
+      <span className="text-xs text-white/40">{label}</span>
+      <span className={`text-[13px] ${highlight ? "text-[#F07028] tracking-[2px] font-extrabold" : "text-white/85 font-medium"}`}>
         {value}
       </span>
     </div>
   );
 }
-
-const S = {
-  page: { minHeight: "100vh", background: "#06040e", color: "#fff", fontFamily: "var(--font-geist-sans), sans-serif", position: "relative", overflow: "hidden" },
-  glowA: { position: "fixed", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(240,112,40,0.10), transparent 70%)", top: -150, left: -150, pointerEvents: "none" },
-  container: { maxWidth: 1000, margin: "0 auto", padding: "36px 24px 80px", position: "relative", zIndex: 1 },
-  backBtn: { display: "flex", alignItems: "center", gap: 7, background: "transparent", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", marginBottom: 32, padding: 0 },
-  layout: { display: "grid", gridTemplateColumns: "1fr 340px", gap: 24, alignItems: "start" },
-
-  /* Steps */
-  steps: { display: "flex", alignItems: "center", marginBottom: 24, gap: 0 },
-  stepWrap: { display: "flex", alignItems: "center", gap: 8, flex: 1 },
-  stepCircle: { width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s" },
-  stepNum: { fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.5)" },
-  stepLabel: { fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" },
-  stepLine: { flex: 1, height: 2, borderRadius: 2, margin: "0 8px", transition: "background 0.3s" },
-
-  /* Card */
-  card: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, display: "flex", flexDirection: "column", gap: 24 },
-  cardHeader: { display: "flex", alignItems: "center", gap: 14 },
-  cardIconWrap: { width: 44, height: 44, borderRadius: 12, background: "rgba(240,112,40,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  cardTitle: { fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 },
-  cardSub: { fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 },
-
-  /* Fields */
-  fields: { display: "flex", flexDirection: "column", gap: 14 },
-  fieldWrap: { display: "flex", flexDirection: "column", gap: 7 },
-  fieldLabel: { display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.55)" },
-  input: { width: "100%", background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.09)", borderRadius: 12, color: "#fff", fontSize: 14, padding: "12px 14px", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s", appearance: "none" },
-
-  /* Contact block */
-  contactBlock: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px" },
-  contactBlockHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  contactBadge: { fontSize: 11, fontWeight: 700, color: "#F07028", background: "rgba(240,112,40,0.12)", borderRadius: 6, padding: "3px 9px", textTransform: "uppercase", letterSpacing: 0.5 },
-  removeBtn: { display: "flex", alignItems: "center", gap: 5, background: "transparent", border: "none", color: "#ef4444", fontSize: 12, cursor: "pointer" },
-  addContactBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "transparent", border: "1.5px dashed rgba(240,112,40,0.3)", borderRadius: 12, color: "#F07028", fontSize: 13, fontWeight: 500, padding: "12px", cursor: "pointer" },
-
-  /* Review */
-  reviewSection: { display: "flex", flexDirection: "column", gap: 10, background: "rgba(255,255,255,0.03)", borderRadius: 14, padding: 16 },
-  reviewSectionLabel: { fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 },
-  reviewRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  reviewLabel: { fontSize: 12, color: "rgba(255,255,255,0.38)" },
-  reviewValue: { fontSize: 13 },
-  reviewContact: { display: "flex", alignItems: "center", gap: 10 },
-  reviewContactAvatar: { width: 28, height: 28, borderRadius: "50%", background: "rgba(240,112,40,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#F07028" },
-  reviewContactName: { fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" },
-  reviewContactPhone: { fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 },
-
-  /* Buttons */
-  nextBtn: { flex: 1, background: "linear-gradient(135deg,#FFB347,#F07028,#E8411A)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 24px", cursor: "pointer", boxShadow: "0 4px 20px rgba(240,112,40,0.3)" },
-  ghostBtn: { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, fontSize: 14, padding: "13px 20px", cursor: "pointer" },
-
-  /* Preview */
-  previewSide: { display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 100 },
-  previewCard: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 24, display: "flex", flexDirection: "column", gap: 14 },
-  previewLabel: { fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: 1 },
-  previewPlate: { display: "flex", alignItems: "center", gap: 8, background: "rgba(240,112,40,0.08)", border: "1px solid rgba(240,112,40,0.18)", borderRadius: 10, padding: "10px 14px" },
-  previewPlateNum: { fontSize: 18, fontWeight: 800, letterSpacing: 3, color: "#F07028" },
-  previewName: { fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.7)" },
-  previewBlood: { display: "flex", alignItems: "center", gap: 6 },
-  previewQrBox: { display: "flex", justifyContent: "center" },
-  previewQrPlaceholder: { width: 140, height: 140, border: "2px dashed rgba(255,255,255,0.10)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 },
-  previewQrText: { fontSize: 11, color: "rgba(255,255,255,0.25)", textAlign: "center", lineHeight: 1.5 },
-  previewContacts: { borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 },
-  previewContactsLabel: { fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: 1 },
-  previewContactRow: { display: "flex", alignItems: "center", gap: 8 },
-  previewContactDot: { width: 6, height: 6, borderRadius: "50%", background: "#F07028", flexShrink: 0 },
-  previewContactName: { fontSize: 13, color: "rgba(255,255,255,0.65)" },
-  previewNote: { fontSize: 12, color: "rgba(255,255,255,0.3)", lineHeight: 1.6, textAlign: "center", padding: "0 8px" },
-
-  /* Spinner */
-  spinner: { width: 36, height: 36, border: "3px solid rgba(240,112,40,0.15)", borderTop: "3px solid #F07028", borderRadius: "50%", animation: "spin 0.8s linear infinite", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)" },
-};

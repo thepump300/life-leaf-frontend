@@ -12,17 +12,16 @@ import { qrAPI, incidentAPI } from "@/services/api";
 
 export default function ScanPage({ params }) {
   const { qrId }    = use(params);
-  const [vehicle, setVehicle]       = useState(null);
-  const [error, setError]           = useState("");
-  const [loading, setLoading]       = useState(true);
-  const [step, setStep]             = useState("choose");   // choose | location | success
-  const [selected, setSelected]     = useState(null);
-  const [location, setLocation]     = useState("");
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [isOffline, setIsOffline]   = useState(false);
+  const [vehicle,    setVehicle]   = useState(null);
+  const [error,      setError]     = useState("");
+  const [loading,    setLoading]   = useState(true);
+  const [step,       setStep]      = useState("choose"); // choose | location | success
+  const [selected,   setSelected]  = useState(null);
+  const [location,   setLocation]  = useState("");
+  const [gpsLoading, setGpsLoading]= useState(false);
+  const [submitting, setSubmitting]= useState(false);
+  const [isOffline,  setIsOffline] = useState(false);
 
-  // Detect offline
   useEffect(() => {
     const update = () => setIsOffline(!navigator.onLine);
     update();
@@ -42,10 +41,7 @@ export default function ScanPage({ params }) {
   }, [qrId]);
 
   const captureGPS = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported on this device");
-      return;
-    }
+    if (!navigator.geolocation) { toast.error("Geolocation not supported on this device"); return; }
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -54,10 +50,7 @@ export default function ScanPage({ params }) {
         setGpsLoading(false);
         toast.success("Location captured");
       },
-      () => {
-        setGpsLoading(false);
-        toast.error("Couldn't get location. Type it manually.");
-      },
+      () => { setGpsLoading(false); toast.error("Couldn't get location. Type it manually."); },
       { timeout: 10000, maximumAge: 0 }
     );
   };
@@ -74,19 +67,19 @@ export default function ScanPage({ params }) {
     }
   };
 
-  // ── Offline banner ──────────────────────────────────────────────────
+  // ── Offline ──
   if (isOffline) return (
     <Screen>
-      <div style={S.card}>
-        <div style={{ ...S.errorIconWrap, background: "rgba(239,68,68,0.10)" }}>
+      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
+        <div className="w-[72px] h-[72px] rounded-full bg-[rgba(239,68,68,0.10)] flex items-center justify-center mx-auto">
           <WifiOff size={36} color="#ef4444" />
         </div>
-        <h2 style={S.errorTitle}>No Internet</h2>
-        <p style={S.errorSub}>You're offline. The report can't be submitted right now.</p>
-        <a href="tel:112" style={S.call112Btn}>
+        <h2 className="text-[22px] font-extrabold text-center">No Internet</h2>
+        <p className="text-sm text-white/40 text-center leading-[1.6]">You&apos;re offline. The report can&apos;t be submitted right now.</p>
+        <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
           <Phone size={18} /> Call 112 Emergency
         </a>
-        <p style={S.disclaimer}>Please call emergency services directly.</p>
+        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">Please call emergency services directly.</p>
       </div>
     </Screen>
   );
@@ -95,70 +88,81 @@ export default function ScanPage({ params }) {
 
   if (error || !vehicle) return (
     <Screen>
-      <div style={S.errorBox}>
-        <div style={S.errorIconWrap}><TriangleAlert size={36} color="#ef4444" /></div>
-        <h2 style={S.errorTitle}>QR Not Found</h2>
-        <p style={S.errorSub}>This QR code is invalid or has been removed.</p>
+      <div className="flex flex-col items-center gap-3.5 text-center bg-white/[0.03] border border-[rgba(239,68,68,0.15)] rounded-3xl py-12 px-8 max-w-[360px] text-white relative z-[1]">
+        <div className="w-[72px] h-[72px] rounded-full bg-[rgba(239,68,68,0.10)] flex items-center justify-center">
+          <TriangleAlert size={36} color="#ef4444" />
+        </div>
+        <h2 className="text-[22px] font-extrabold">QR Not Found</h2>
+        <p className="text-sm text-white/40 leading-relaxed">This QR code is invalid or has been removed.</p>
       </div>
     </Screen>
   );
 
   if (step === "success") return (
     <Screen>
-      <div style={S.card}>
-        <div style={S.successRing}>
-          <div style={S.successInner}><CheckCircle2 size={40} color="#22c55e" /></div>
+      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
+        <div className="flex justify-center">
+          <div className="w-20 h-20 rounded-full bg-[rgba(34,197,94,0.12)] border-2 border-[rgba(34,197,94,0.25)] flex items-center justify-center">
+            <CheckCircle2 size={40} color="#22c55e" />
+          </div>
         </div>
-        <h2 style={S.successTitle}>Report Sent!</h2>
-        <p style={S.successSub}>The vehicle owner has been notified. Thank you for keeping the community safe.</p>
+        <h2 className="text-[24px] font-black text-[#22c55e] text-center">Report Sent!</h2>
+        <p className="text-[13px] text-white/45 text-center leading-[1.7]">
+          The vehicle owner has been notified. Thank you for keeping the community safe.
+        </p>
 
-        <div style={S.summaryCard}>
+        <div className="bg-white/[0.04] rounded-[14px] p-4 flex flex-col gap-3">
           <SummaryRow label="Incident" value={selected.label} color={selected.color} />
           <SummaryRow label="Vehicle"  value={vehicle.vehicleNumber} />
           <SummaryRow label="Location" value={location || "Unknown"} />
         </div>
 
         {selected.key === "accident" && (
-          <a href="tel:112" style={S.call112Btn}>
+          <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
             <Phone size={16} /> Call 112 Emergency Services
           </a>
         )}
 
-        <p style={S.successNote}>No personal data was shared with you.</p>
+        <p className="text-[11px] text-white/[0.22] text-center">No personal data was shared with you.</p>
       </div>
     </Screen>
   );
 
   if (step === "location") return (
     <Screen>
-      <div style={S.card}>
-        {/* Always-visible Call 112 on accident */}
+      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
         {selected.key === "accident" && (
-          <a href="tel:112" style={S.call112Btn}>
+          <a href="tel:112" className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#dc2626] to-[#ef4444] border-none rounded-[14px] text-white font-extrabold text-base py-4 cursor-pointer no-underline shadow-[0_8px_28px_rgba(239,68,68,0.4)]">
             <Phone size={16} /> Call 112 Emergency Services
           </a>
         )}
 
-        <button style={S.backBtn} onClick={() => setStep("choose")}>
+        <button
+          className="flex items-center gap-1.5 bg-transparent border-none text-white/40 text-[13px] cursor-pointer p-0"
+          onClick={() => setStep("choose")}
+        >
           <ArrowLeft size={15} /> Back
         </button>
 
-        <div style={{ ...S.selectedBadge, background: selected.color + "18", border: `1px solid ${selected.color}30` }}>
+        <div
+          className="flex items-center gap-2 rounded-[10px] py-2.5 px-3.5"
+          style={{ background: selected.color + "18", border: `1px solid ${selected.color}30` }}
+        >
           {selected.icon}
-          <span style={{ ...S.selectedLabel, color: selected.color }}>{selected.label}</span>
+          <span className="text-sm font-bold" style={{ color: selected.color }}>{selected.label}</span>
         </div>
 
         <VehiclePlate number={vehicle.vehicleNumber} />
 
-        <div style={S.locationBox}>
-          <div style={S.locationHeader}>
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-1.5">
             <Navigation size={15} color="#F07028" />
-            <span style={S.locationTitle}>Where is the vehicle?</span>
-            <span style={S.locationOptional}>(optional)</span>
+            <span className="text-[13px] font-semibold text-white/65">Where is the vehicle?</span>
+            <span className="text-[11px] text-white/[0.28] ml-0.5">(optional)</span>
           </div>
-          <div style={S.locationRow}>
+          <div className="flex gap-2">
             <input
-              style={{ ...S.locationInput, flex: 1 }}
+              className="flex-1 bg-white/[0.06] border-[1.5px] border-white/10 rounded-xl text-white text-sm py-[13px] px-[15px] outline-none box-border placeholder:text-white/30"
               type="text"
               placeholder="e.g. Near Gate 2, Phoenix Mall"
               value={location}
@@ -166,29 +170,35 @@ export default function ScanPage({ params }) {
               autoFocus
             />
             <button
-              style={S.gpsBtn}
+              className="w-[46px] shrink-0 bg-[rgba(240,112,40,0.10)] border-[1.5px] border-[rgba(240,112,40,0.25)] rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-50"
               onClick={captureGPS}
               disabled={gpsLoading}
               title="Use my location"
             >
               {gpsLoading
-                ? <span style={S.gpsBtnSpinner} />
+                ? <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-[rgba(240,112,40,0.3)] border-t-[#F07028] animate-spin" />
                 : <Navigation size={15} color="#F07028" />}
             </button>
           </div>
         </div>
 
         <button
-          style={{ ...S.reportBtn, background: selected.key === "accident" ? "linear-gradient(135deg,#dc2626,#ef4444)" : "linear-gradient(135deg,#FFB347,#F07028,#E8411A)", boxShadow: `0 8px 28px ${selected.color}40` }}
+          className="flex items-center justify-center gap-2 border-none rounded-[14px] text-white font-bold text-[15px] py-3.5 cursor-pointer w-full disabled:opacity-50"
+          style={{
+            background: selected.key === "accident"
+              ? "linear-gradient(135deg,#dc2626,#ef4444)"
+              : "linear-gradient(135deg,#FFB347,#F07028,#E8411A)",
+            boxShadow: `0 8px 28px ${selected.color}40`,
+          }}
           onClick={submit}
           disabled={submitting}
         >
           {submitting
-            ? <span style={S.btnLoader}><span style={S.btnSpinner} /> Submitting…</span>
+            ? <><span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Submitting…</>
             : <><span>Submit Report</span><ChevronRight size={16} /></>}
         </button>
 
-        <p style={S.locationDisclaimer}>
+        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">
           Your identity is not recorded. Only the location you provide will be shared with the vehicle owner.
         </p>
       </div>
@@ -198,54 +208,61 @@ export default function ScanPage({ params }) {
   // ── Choose step ──
   return (
     <Screen>
-      <div style={S.card}>
+      <div className="w-full max-w-[440px] bg-white/[0.04] border border-white/[0.09] rounded-3xl px-6 py-7 text-white flex flex-col gap-4 relative z-[1] backdrop-blur-md">
         {/* Brand */}
-        <div style={S.brand}>
-          <span style={S.brandName}>Community</span>
-          <span style={S.brandTag}>QR Report</span>
+        <div className="flex items-center justify-center gap-2.5">
+          <span
+            className="text-[20px] font-black"
+            style={{ background: "linear-gradient(90deg,#FFB347,#F07028)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+          >
+            Community
+          </span>
+          <span className="text-[10px] font-bold text-white/30 bg-white/[0.06] border border-white/10 rounded-[20px] py-[3px] px-[9px] uppercase tracking-wide">
+            QR Report
+          </span>
         </div>
 
         <VehiclePlate number={vehicle.vehicleNumber} />
 
-        <p style={S.choosePrompt}>What do you want to report?</p>
+        <p className="text-sm font-semibold text-white/60 text-center">What do you want to report?</p>
 
-        {/* Emergency — shown first, more prominent */}
+        {/* Emergency */}
         <button
-          style={{ ...S.typeBtn, ...S.emergencyBtnStyle }}
+          className="flex items-center gap-3.5 bg-[rgba(239,68,68,0.06)] border-[1.5px] border-[rgba(239,68,68,0.25)] rounded-2xl p-4 cursor-pointer text-left text-white w-full"
           onClick={() => {
             setSelected({ key: "accident", label: "Accident / Emergency", color: "#ef4444", icon: <Siren size={18} color="#ef4444" /> });
             setStep("location");
           }}
         >
-          <div style={{ ...S.typeBtnIcon, background: "rgba(239,68,68,0.15)" }}>
+          <div className="w-12 h-12 rounded-[14px] bg-[rgba(239,68,68,0.15)] flex items-center justify-center shrink-0">
             <Siren size={24} color="#ef4444" />
           </div>
-          <div style={S.typeBtnText}>
-            <span style={S.typeBtnTitle}>Accident / Emergency</span>
-            <span style={S.typeBtnSub}>Urgent — vehicle involved in accident or emergency</span>
+          <div className="flex-1 flex flex-col gap-1">
+            <span className="text-[15px] font-bold text-white">Accident / Emergency</span>
+            <span className="text-xs text-white/40 leading-[1.4]">Urgent — vehicle involved in accident or emergency</span>
           </div>
           <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
         </button>
 
         {/* Parking */}
         <button
-          style={{ ...S.typeBtn }}
+          className="flex items-center gap-3.5 bg-white/[0.04] border-[1.5px] border-white/[0.08] rounded-2xl p-4 cursor-pointer text-left text-white w-full"
           onClick={() => {
             setSelected({ key: "parking", label: "Parking Issue", color: "#F07028", icon: <ParkingCircle size={18} color="#F07028" /> });
             setStep("location");
           }}
         >
-          <div style={{ ...S.typeBtnIcon, background: "rgba(240,112,40,0.15)" }}>
+          <div className="w-12 h-12 rounded-[14px] bg-[rgba(240,112,40,0.15)] flex items-center justify-center shrink-0">
             <ParkingCircle size={24} color="#F07028" />
           </div>
-          <div style={S.typeBtnText}>
-            <span style={S.typeBtnTitle}>Parking Issue</span>
-            <span style={S.typeBtnSub}>Vehicle blocking access or parked incorrectly</span>
+          <div className="flex-1 flex flex-col gap-1">
+            <span className="text-[15px] font-bold text-white">Parking Issue</span>
+            <span className="text-xs text-white/40 leading-[1.4]">Vehicle blocking access or parked incorrectly</span>
           </div>
           <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
         </button>
 
-        <p style={S.disclaimer}>
+        <p className="text-[11px] text-white/[0.22] text-center leading-relaxed">
           🔒 Your identity is not recorded. No personal information is shared with you.
         </p>
       </div>
@@ -255,8 +272,11 @@ export default function ScanPage({ params }) {
 
 function Screen({ children }) {
   return (
-    <div style={S.page}>
-      <div style={S.glow} />
+    <div className="min-h-screen bg-[#06040e] flex items-center justify-center px-4 py-5 relative overflow-hidden font-sans">
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.12) 0%, transparent 60%)" }}
+      />
       {children}
     </div>
   );
@@ -264,103 +284,30 @@ function Screen({ children }) {
 
 function VehiclePlate({ number }) {
   return (
-    <div style={S.plate}>
-      <div style={S.plateInner}>
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-center gap-2.5 bg-[rgba(240,112,40,0.08)] border-[1.5px] border-[rgba(240,112,40,0.25)] rounded-[14px] py-3 px-6 w-full justify-center">
         <Car size={16} color="#F07028" />
-        <span style={S.plateNum}>{number}</span>
+        <span className="text-[26px] font-black tracking-[5px] text-[#F07028]">{number}</span>
       </div>
-      <span style={S.plateSub}>Registered Vehicle</span>
+      <span className="text-[11px] text-white/[0.28] tracking-wide">Registered Vehicle</span>
     </div>
   );
 }
 
 function SummaryRow({ label, value, color }) {
   return (
-    <div style={S.summaryRow}>
-      <span style={S.summaryLabel}>{label}</span>
-      <span style={{ ...S.summaryValue, color: color || "rgba(255,255,255,0.85)" }}>{value}</span>
+    <div className="flex justify-between items-center">
+      <span className="text-xs text-white/35">{label}</span>
+      <span className="text-[13px] font-bold" style={{ color: color || "rgba(255,255,255,0.85)" }}>{value}</span>
     </div>
   );
 }
 
 function Loader() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-      <div style={S.loaderSpinner} />
-      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Looking up vehicle…</p>
+    <div className="flex flex-col items-center gap-3.5">
+      <div className="w-9 h-9 rounded-full border-[3px] border-[rgba(240,112,40,0.15)] border-t-[#F07028] animate-spin" />
+      <p className="text-[13px] text-white/35">Looking up vehicle…</p>
     </div>
   );
 }
-
-const S = {
-  page: { minHeight: "100vh", background: "#06040e", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px", fontFamily: "var(--font-geist-sans), sans-serif", position: "relative", overflow: "hidden" },
-  glow: { position: "fixed", inset: 0, background: "radial-gradient(ellipse at 50% 0%, rgba(240,112,40,0.12) 0%, transparent 60%)", pointerEvents: "none" },
-
-  card: { width: "100%", maxWidth: 440, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, padding: "28px 24px", color: "#fff", display: "flex", flexDirection: "column", gap: 16, position: "relative", zIndex: 1, backdropFilter: "blur(12px)" },
-
-  // Call 112 — always above the fold on accident flows
-  call112Btn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#dc2626,#ef4444)", border: "none", borderRadius: 14, color: "#fff", fontWeight: 800, fontSize: 16, padding: "16px", cursor: "pointer", textDecoration: "none", boxShadow: "0 8px 28px rgba(239,68,68,0.4)" },
-
-  /* Brand */
-  brand: { display: "flex", alignItems: "center", justifyContent: "center", gap: 10 },
-  brandName: { fontSize: 20, fontWeight: 900, background: "linear-gradient(90deg,#FFB347,#F07028)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
-  brandTag: { fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 20, padding: "3px 9px", textTransform: "uppercase", letterSpacing: 1 },
-
-  /* Vehicle plate */
-  plate: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5 },
-  plateInner: { display: "flex", alignItems: "center", gap: 10, background: "rgba(240,112,40,0.08)", border: "1.5px solid rgba(240,112,40,0.25)", borderRadius: 14, padding: "12px 24px", width: "100%", justifyContent: "center" },
-  plateNum: { fontSize: 26, fontWeight: 900, letterSpacing: 5, color: "#F07028" },
-  plateSub: { fontSize: 11, color: "rgba(255,255,255,0.28)", letterSpacing: 1 },
-
-  /* Choose */
-  choosePrompt: { fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", textAlign: "center" },
-  typeBtn: { display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "16px", cursor: "pointer", textAlign: "left", color: "#fff", width: "100%" },
-  emergencyBtnStyle: { border: "1.5px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.06)" },
-  typeBtnIcon: { width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  typeBtnText: { flex: 1, display: "flex", flexDirection: "column", gap: 4 },
-  typeBtnTitle: { fontSize: 15, fontWeight: 700, color: "#fff" },
-  typeBtnSub: { fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.4 },
-  disclaimer: { fontSize: 11, color: "rgba(255,255,255,0.22)", textAlign: "center", lineHeight: 1.6 },
-
-  /* Back */
-  backBtn: { display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", color: "rgba(255,255,255,0.38)", fontSize: 13, cursor: "pointer", padding: 0 },
-
-  /* Selected badge */
-  selectedBadge: { display: "flex", alignItems: "center", gap: 8, borderRadius: 10, padding: "10px 14px" },
-  selectedLabel: { fontSize: 14, fontWeight: 700 },
-
-  /* Location */
-  locationBox: { display: "flex", flexDirection: "column", gap: 10 },
-  locationHeader: { display: "flex", alignItems: "center", gap: 7 },
-  locationTitle: { fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.65)" },
-  locationOptional: { fontSize: 11, color: "rgba(255,255,255,0.28)", marginLeft: 2 },
-  locationRow: { display: "flex", gap: 8 },
-  locationInput: { background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.10)", borderRadius: 12, color: "#fff", fontSize: 14, padding: "13px 15px", outline: "none", boxSizing: "border-box" },
-  gpsBtn: { width: 46, flexShrink: 0, background: "rgba(240,112,40,0.10)", border: "1.5px solid rgba(240,112,40,0.25)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
-  gpsBtnSpinner: { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(240,112,40,0.3)", borderTop: "2px solid #F07028", borderRadius: "50%", animation: "spin 0.7s linear infinite" },
-
-  reportBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, padding: "14px", cursor: "pointer", width: "100%" },
-  btnLoader: { display: "flex", alignItems: "center", gap: 8 },
-  btnSpinner: { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" },
-  locationDisclaimer: { fontSize: 11, color: "rgba(255,255,255,0.22)", textAlign: "center", lineHeight: 1.6 },
-
-  /* Success */
-  successRing: { display: "flex", justifyContent: "center" },
-  successInner: { width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.12)", border: "2px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" },
-  successTitle: { textAlign: "center", fontSize: 24, fontWeight: 900, color: "#22c55e" },
-  successSub: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 },
-  summaryCard: { background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px", display: "flex", flexDirection: "column", gap: 12 },
-  summaryRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  summaryLabel: { fontSize: 12, color: "rgba(255,255,255,0.35)" },
-  summaryValue: { fontSize: 13, fontWeight: 700 },
-  successNote: { textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.22)" },
-
-  /* Error */
-  errorBox: { display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 24, padding: "48px 32px", maxWidth: 360, color: "#fff", position: "relative", zIndex: 1 },
-  errorIconWrap: { width: 72, height: 72, borderRadius: "50%", background: "rgba(239,68,68,0.10)", display: "flex", alignItems: "center", justifyContent: "center" },
-  errorTitle: { fontSize: 22, fontWeight: 800 },
-  errorSub: { fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 },
-
-  /* Loader */
-  loaderSpinner: { width: 36, height: 36, border: "3px solid rgba(240,112,40,0.15)", borderTop: "3px solid #F07028", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
-};
